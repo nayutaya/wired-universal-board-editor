@@ -372,7 +372,19 @@
       stage.canvas.height = value.height;
       return stage.update();
     });
-    return $(window).trigger("resize");
+    $(window).trigger("resize");
+    return $(document).asEventStream("keydown").onValue(function(e) {
+      switch (e.keyCode) {
+        case 38:
+          return console.log("up");
+        case 40:
+          return console.log("down");
+        case 37:
+          return console.log("left");
+        case 40:
+          return console.log("right");
+      }
+    });
   });
 
 }).call(this);

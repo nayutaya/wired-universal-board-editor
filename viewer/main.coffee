@@ -103,3 +103,11 @@ $(document).ready ->
     stage.update()
 
   $(window).trigger("resize")
+
+  $(document).asEventStream("keydown").onValue (e)->
+    # console.log e
+    switch e.keyCode
+      when 38 then console.log("up")
+      when 40 then console.log("down")
+      when 37 then console.log("left")
+      when 40 then console.log("right")
