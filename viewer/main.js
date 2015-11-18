@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, edgesUnderPoint, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, nodesUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, shapesUnderPoint, stage, stageUpdateBus, windowSize;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, edgesUnderPoint, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, nodesUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, shapesUnderPoint, stage, stageUpdate, stageUpdateBus, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -311,10 +311,12 @@
     stage.addChild(cursor);
     stageUpdateBus = new Bacon.Bus();
     stageUpdateBus.throttle(50).onValue(function(v) {
-      console.log("stageUpdateBus: " + v);
       return stage.update();
     });
-    stageUpdateBus.push(null);
+    stageUpdate = function() {
+      return stageUpdateBus.push(null);
+    };
+    stageUpdate();
     cursorPosition = $("#canvas1").asEventStream("mousemove").map(function(e) {
       return {
         x: e.offsetX,
@@ -324,7 +326,7 @@
     cursorPosition.onValue(function(value) {
       cursor.x = value.x;
       cursor.y = value.y;
-      return stageUpdateBus.push(null);
+      return stageUpdate();
     });
     logicalToPhysical = function(value) {
       return value / 20 * 1000;
@@ -352,7 +354,7 @@
         shape = nodeShapeMap[node.id];
         return shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
       });
-      return stageUpdateBus.push(null);
+      return stageUpdate();
     });
     edgesUnderPoint.onValue(function(edges) {
       edges.forEach(function(edge) {
@@ -364,7 +366,7 @@
         shape = edgeShapeMap[edge.id];
         return shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2);
       });
-      return stageUpdateBus.push(null);
+      return stageUpdate();
     });
     windowSize = $(window).asEventStream("resize").map(function(e) {
       return {
@@ -375,7 +377,7 @@
     windowSize.onValue(function(value) {
       stage.canvas.width = value.width;
       stage.canvas.height = value.height;
-      return stageUpdateBus.push(null);
+      return stageUpdate();
     });
     $(window).trigger("resize");
     return $(document).asEventStream("keydown").onValue(function(e) {
