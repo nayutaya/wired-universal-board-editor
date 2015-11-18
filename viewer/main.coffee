@@ -63,20 +63,20 @@ class CursorShape
       stageUpdate()
 
 class NodeShape
-  constructor: (@node, viewport, nodeRadius)->
+  constructor: (@node, viewport, nodeRadius, stageUpdate)->
     @shape = new createjs.Shape()
 
     self = this
 
     color = "DeepSkyBlue"
     nodeRadius.onValue (nodeRadius)->
-      console.log "nodeRadius: #{nodeRadius}"
       self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius)
+      stageUpdate()
 
     viewport.onValue (viewport)->
-      console.log "viewport: #{viewport}"
       self.shape.x = viewport.physicalToLogical(self.node.x)
       self.shape.y = viewport.physicalToLogical(self.node.y)
+      stageUpdate()
 
 
 $(document).ready ->
@@ -96,7 +96,7 @@ $(document).ready ->
 
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
-    nodeShape = new NodeShape(node, viewport, nodeRadius)
+    nodeShape = new NodeShape(node, viewport, nodeRadius, stageUpdate)
     stage.addChild(nodeShape.shape)
     shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
@@ -182,6 +182,8 @@ $(document).ready ->
       when 38
         console.log("up")
         viewport.push(new Viewport(scale: 1.0 / 1000 * 30))
-      when 40 then console.log("down")
+      when 40
+        console.log("down")
+        nodeRadius.push(20)
       when 37 then console.log("left")
       when 40 then console.log("right")

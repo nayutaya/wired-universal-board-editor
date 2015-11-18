@@ -352,20 +352,20 @@
   })();
 
   NodeShape = (function() {
-    function NodeShape(node1, viewport, nodeRadius) {
+    function NodeShape(node1, viewport, nodeRadius, stageUpdate) {
       var color, self;
       this.node = node1;
       this.shape = new createjs.Shape();
       self = this;
       color = "DeepSkyBlue";
       nodeRadius.onValue(function(nodeRadius) {
-        console.log("nodeRadius: " + nodeRadius);
-        return self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius);
+        self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius);
+        return stageUpdate();
       });
       viewport.onValue(function(viewport) {
-        console.log("viewport: " + viewport);
         self.shape.x = viewport.physicalToLogical(self.node.x);
-        return self.shape.y = viewport.physicalToLogical(self.node.y);
+        self.shape.y = viewport.physicalToLogical(self.node.y);
+        return stageUpdate();
       });
     }
 
@@ -392,7 +392,7 @@
     shapeIdToNodeShapeMap = {};
     board.nodes.forEach(function(node) {
       var nodeShape;
-      nodeShape = new NodeShape(node, viewport, nodeRadius);
+      nodeShape = new NodeShape(node, viewport, nodeRadius, stageUpdate);
       stage.addChild(nodeShape.shape);
       return shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape;
     });
@@ -485,7 +485,8 @@
             scale: 1.0 / 1000 * 30
           }));
         case 40:
-          return console.log("down");
+          console.log("down");
+          return nodeRadius.push(20);
         case 37:
           return console.log("left");
         case 40:
