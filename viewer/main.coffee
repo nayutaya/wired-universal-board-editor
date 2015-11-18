@@ -3,7 +3,7 @@ board_6x4 = {"nodes":[{"id":"(0,0)","x":0,"y":0},{"id":"(1,0)","x":2540,"y":0},{
 
 nodeRadius = new Bacon.Bus()
 edgeWidth  = Bacon.constant(3)
-viewPort   = Bacon.constant({scale: 0.001, offsetX: 0, offsetY: 0})
+viewport   = new Bacon.Bus()
 
 # 準備完了時におけるウィンドウサイズ
 windowSizeAtReady  = $(document).asEventStream("ready")
@@ -51,6 +51,17 @@ class Viewport
 
   logicalToPhysical: (value)-> value / @scale
 
+class CursorShape
+  constructor: (position, stageUpdate)->
+    @shape = new createjs.Shape()
+    @shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
+
+    self = this
+    position.onValue (position)->
+      self.shape.x = position.x
+      self.shape.y = position.y
+      stageUpdate()
+
 class NodeShape
   constructor: (@node, viewport, nodeRadius)->
     @shape = new createjs.Shape()
@@ -83,8 +94,6 @@ $(document).ready ->
   board = new Board(board_6x4)
   console.log board
 
-  viewport = new Bacon.Bus()
-
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
     nodeShape = new NodeShape(node, viewport, nodeRadius)
@@ -112,20 +121,13 @@ $(document).ready ->
     # $(shape).asEventStream("click").onValue (e)-> console.log e
   ###
 
-  cursor = new createjs.Shape()
-  cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
-  stage.addChild(cursor)
-
-
-  stageUpdate()
-
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
 
-  cursorPosition.onValue (value)->
-    cursor.x = value.x
-    cursor.y = value.y
-    stageUpdate()
+  cursorShape = new CursorShape(cursorPosition, stageUpdate)
+  stage.addChild(cursorShape.shape)
+
+  stageUpdate()
 
   logicalToPhysical = (value)-> value / 20 * 1000
 
