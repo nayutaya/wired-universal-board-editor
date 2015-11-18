@@ -39,26 +39,28 @@ $(document).ready ->
     stage.addChild(shape)
     edgeShapeMap[edge.id] = shape
 
-
-    console.log [x1, y1]
-
   cursor = new createjs.Shape()
-  cursor.graphics.beginFill("green").drawCircle(0, 0, 5)
+  cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
   stage.addChild(cursor)
 
   stage.update()
 
-  clicks = $("#canvas1").asEventStream("click")
-  clicks.onValue (e)->
-    console.log "click"
-    console.log e
-    cursor.x = e.offsetX
-    cursor.y = e.offsetY
+  cursorPosition = $("#canvas1").asEventStream("mousemove")
+    .map (e)-> {x: e.offsetX, y: e.offsetY}
+    .toProperty()
+
+  cursorPosition.onValue (value)->
+    cursor.x = value.x
+    cursor.y = value.y
     stage.update()
 
-  $(window).resize (e)->
-    stage.canvas.width  = $(e.target).width()
-    stage.canvas.height = $(e.target).height()
+  windowSize = $(window).asEventStream("resize")
+    .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
+    .toProperty()
+
+  windowSize.onValue (value)->
+    stage.canvas.width  = value.width
+    stage.canvas.height = value.height
     stage.update()
 
   $(window).trigger("resize")

@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, clicks, cursor, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -298,24 +298,32 @@
       shape = new createjs.Shape();
       shape.graphics.beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
       stage.addChild(shape);
-      edgeShapeMap[edge.id] = shape;
-      return console.log([x1, y1]);
+      return edgeShapeMap[edge.id] = shape;
     });
     cursor = new createjs.Shape();
-    cursor.graphics.beginFill("green").drawCircle(0, 0, 5);
+    cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0);
     stage.addChild(cursor);
     stage.update();
-    clicks = $("#canvas1").asEventStream("click");
-    clicks.onValue(function(e) {
-      console.log("click");
-      console.log(e);
-      cursor.x = e.offsetX;
-      cursor.y = e.offsetY;
+    cursorPosition = $("#canvas1").asEventStream("mousemove").map(function(e) {
+      return {
+        x: e.offsetX,
+        y: e.offsetY
+      };
+    }).toProperty();
+    cursorPosition.onValue(function(value) {
+      cursor.x = value.x;
+      cursor.y = value.y;
       return stage.update();
     });
-    $(window).resize(function(e) {
-      stage.canvas.width = $(e.target).width();
-      stage.canvas.height = $(e.target).height();
+    windowSize = $(window).asEventStream("resize").map(function(e) {
+      return {
+        width: $(e.target).width(),
+        height: $(e.target).height()
+      };
+    }).toProperty();
+    windowSize.onValue(function(value) {
+      stage.canvas.width = value.width;
+      stage.canvas.height = value.height;
       return stage.update();
     });
     return $(window).trigger("resize");
