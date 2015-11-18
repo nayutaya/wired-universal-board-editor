@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage, windowSize;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, selectedNode, stage, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -314,6 +314,29 @@
       cursor.x = value.x;
       cursor.y = value.y;
       return stage.update();
+    });
+    logicalToPhysical = function(value) {
+      return value / 20 * 1000;
+    };
+    selectedNode = cursorPosition.map(function(logicalPosition) {
+      return {
+        x: logicalToPhysical(logicalPosition.x),
+        y: logicalToPhysical(logicalPosition.y)
+      };
+    }).onValue(function(physicalPosition) {
+      var hitnodes;
+      hitnodes = nodes.filter(function(node) {
+        var cx, cy, hit, nr, nx, ny;
+        nx = node.x;
+        ny = node.y;
+        nr = logicalToPhysical(10);
+        cx = physicalPosition.x;
+        cy = physicalPosition.y;
+        hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2);
+        return hit;
+      });
+      console.log(physicalPosition);
+      return console.log(hitnodes);
     });
     windowSize = $(window).asEventStream("resize").map(function(e) {
       return {

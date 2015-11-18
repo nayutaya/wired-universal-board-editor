@@ -14,7 +14,7 @@ $(document).ready ->
   edges = (board?.edges ? [])
   edges.forEach (edge)-> edgeMap[edge.id] = edge
 
-  micrometerToPixel = (value)->  value / 1000 * 20
+  micrometerToPixel = (value)-> value / 1000 * 20
 
   nodeShapeMap = {}
   nodes.forEach (node)->
@@ -53,6 +53,23 @@ $(document).ready ->
     cursor.x = value.x
     cursor.y = value.y
     stage.update()
+
+  logicalToPhysical = (value)-> value / 20 * 1000
+
+  selectedNode = cursorPosition
+    .map (logicalPosition)->
+      {x: logicalToPhysical(logicalPosition.x), y: logicalToPhysical(logicalPosition.y)}
+    .onValue (physicalPosition)->
+      hitnodes = nodes.filter (node)->
+        nx = node.x
+        ny = node.y
+        nr = logicalToPhysical(10)
+        cx = physicalPosition.x
+        cy = physicalPosition.y
+        hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2)
+        return hit
+      console.log physicalPosition
+      console.log hitnodes
 
   windowSize = $(window).asEventStream("resize")
     .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
