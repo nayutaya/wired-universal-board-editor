@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, edgesUnderPoint, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, nodesUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, shapesUnderPoint, stage, windowSize;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, edgesUnderPoint, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, nodesUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, shapesUnderPoint, stage, stageUpdateBus, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -309,7 +309,12 @@
     cursor = new createjs.Shape();
     cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0);
     stage.addChild(cursor);
-    stage.update();
+    stageUpdateBus = new Bacon.Bus();
+    stageUpdateBus.throttle(50).onValue(function(v) {
+      console.log("stageUpdateBus: " + v);
+      return stage.update();
+    });
+    stageUpdateBus.push(null);
     cursorPosition = $("#canvas1").asEventStream("mousemove").map(function(e) {
       return {
         x: e.offsetX,
@@ -319,7 +324,7 @@
     cursorPosition.onValue(function(value) {
       cursor.x = value.x;
       cursor.y = value.y;
-      return stage.update();
+      return stageUpdateBus.push(null);
     });
     logicalToPhysical = function(value) {
       return value / 20 * 1000;
@@ -342,24 +347,24 @@
       });
     });
     nodesUnderPoint.onValue(function(nodes) {
-      return nodes.forEach(function(node) {
+      nodes.forEach(function(node) {
         var shape;
         shape = nodeShapeMap[node.id];
-        shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
-        return stage.update();
+        return shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
       });
+      return stageUpdateBus.push(null);
     });
     edgesUnderPoint.onValue(function(edges) {
-      return edges.forEach(function(edge) {
+      edges.forEach(function(edge) {
         var shape, x1, x2, y1, y2;
         x1 = micrometerToPixel(nodeMap[edge.a].x);
         y1 = micrometerToPixel(nodeMap[edge.a].y);
         x2 = micrometerToPixel(nodeMap[edge.b].x);
         y2 = micrometerToPixel(nodeMap[edge.b].y);
         shape = edgeShapeMap[edge.id];
-        shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2);
-        return stage.update();
+        return shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2);
       });
+      return stageUpdateBus.push(null);
     });
     windowSize = $(window).asEventStream("resize").map(function(e) {
       return {
@@ -370,7 +375,7 @@
     windowSize.onValue(function(value) {
       stage.canvas.width = value.width;
       stage.canvas.height = value.height;
-      return stage.update();
+      return stageUpdateBus.push(null);
     });
     $(window).trigger("resize");
     return $(document).asEventStream("keydown").onValue(function(e) {

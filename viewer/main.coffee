@@ -51,7 +51,12 @@ $(document).ready ->
   cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
   stage.addChild(cursor)
 
-  stage.update()
+  stageUpdateBus = new Bacon.Bus()
+  stageUpdateBus.throttle(50).onValue (v)->
+    console.log "stageUpdateBus: #{v}"
+    stage.update()
+
+  stageUpdateBus.push(null)
 
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
@@ -59,7 +64,7 @@ $(document).ready ->
   cursorPosition.onValue (value)->
     cursor.x = value.x
     cursor.y = value.y
-    stage.update()
+    stageUpdateBus.push(null)
 
   logicalToPhysical = (value)-> value / 20 * 1000
 
@@ -79,7 +84,7 @@ $(document).ready ->
     nodes.forEach (node)->
       shape = nodeShapeMap[node.id]
       shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
-      stage.update()
+    stageUpdateBus.push(null)
 
   edgesUnderPoint.onValue (edges)->
     # console.log "edgesUnderPoint"
@@ -92,7 +97,7 @@ $(document).ready ->
 
       shape = edgeShapeMap[edge.id]
       shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2)
-      stage.update()
+    stageUpdateBus.push(null)
 
   windowSize = $(window).asEventStream("resize")
     .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
@@ -100,7 +105,7 @@ $(document).ready ->
   windowSize.onValue (value)->
     stage.canvas.width  = value.width
     stage.canvas.height = value.height
-    stage.update()
+    stageUpdateBus.push(null)
 
   $(window).trigger("resize")
 
