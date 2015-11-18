@@ -1,19 +1,21 @@
 
 $(document).ready ->
   console.log "ready"
-  canvas  = $("#canvas1")
-  context = canvas[0].getContext("2d")
 
-  draw = ->
-    context.fillStyle = "rgb(200,0,0)"
-    context.fillRect(10, 10, 55, 50)
+  stage = new createjs.Stage("canvas1")
+  console.log stage
 
-  fitToWindow = ->
-    canvas.css(left: 0, top: 0, width: window.innerWidth, height: window.innerHeight)
+  circle = new createjs.Shape()
+  circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 50)
+  circle.x = 100
+  circle.y = 100
+  stage.addChild(circle)
 
-  $(window).resize ->
-    fitToWindow()
-    draw()
+  stage.update()
 
-  fitToWindow()
-  draw()
+  $(window).resize (e)->
+    stage.canvas.width  = $(e.target).width()
+    stage.canvas.height = $(e.target).height()
+    stage.update()
+
+  $(window).trigger("resize")

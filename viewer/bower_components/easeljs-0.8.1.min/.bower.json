@@ -1,0 +1,14 @@
+{
+  "name": "easeljs-0.8.1.min",
+  "_cacheHeaders": {
+    "ETag": "\"4062d4a-14dbe-516a4e856bf00\"",
+    "Last-Modified": "Fri, 22 May 2015 05:26:52 GMT",
+    "Content-Type": "application/x-javascript"
+  },
+  "_release": "e-tag:4062d4a-1",
+  "main": "index.js",
+  "_source": "https://code.createjs.com/easeljs-0.8.1.min.js",
+  "_target": "*",
+  "_originalSource": "https://code.createjs.com/easeljs-0.8.1.min.js",
+  "_direct": true
+}
