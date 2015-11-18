@@ -17,6 +17,7 @@ $(document).ready ->
   micrometerToPixel = (value)-> value / 1000 * 20
 
   nodeShapeMap = {}
+  shapeIdToNodeMap = {}
   nodes.forEach (node)->
     x = micrometerToPixel(node.x)
     y = micrometerToPixel(node.y)
@@ -28,8 +29,10 @@ $(document).ready ->
     shape.y = y
     stage.addChild(shape)
     nodeShapeMap[node.id] = shape
+    shapeIdToNodeMap[shape.id] = node
 
   edgeShapeMap = {}
+  shapeIdToEdgeMap = {}
   edges.forEach (edge)->
     x1 = micrometerToPixel(nodeMap[edge.a].x)
     y1 = micrometerToPixel(nodeMap[edge.a].y)
@@ -37,9 +40,12 @@ $(document).ready ->
     y2 = micrometerToPixel(nodeMap[edge.b].y)
 
     shape = new createjs.Shape()
-    shape.graphics.beginStroke("red").moveTo(x1, y1).lineTo(x2, y2)
+    shape.graphics.setStrokeStyle(3).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2)
     stage.addChild(shape)
     edgeShapeMap[edge.id] = shape
+    shapeIdToEdgeMap[shape.id] = edge
+
+    # $(shape).asEventStream("click").onValue (e)-> console.log e
 
   cursor = new createjs.Shape()
   cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
@@ -58,27 +64,21 @@ $(document).ready ->
 
   logicalToPhysical = (value)-> value / 20 * 1000
 
-  selectedNode = cursorPosition
-    .map (logicalPosition)->
-      {x: logicalToPhysical(logicalPosition.x), y: logicalToPhysical(logicalPosition.y)}
-    .onValue (physicalPosition)->
-      hitnodes = nodes.filter (node)->
-        nx = node.x
-        ny = node.y
-        nr = logicalToPhysical(10)
-        cx = physicalPosition.x
-        cy = physicalPosition.y
-        hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2)
-        return hit
-      hitnodes.forEach (node)->
-        shape = nodeShapeMap[node.id]
-        # nodeShapeMap[node.id].style = "blue"
-        shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
+  objectsUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
+  objectsUnderPoint.onValue (shapes)->
+    nodes = shapes
+      .map (shape)-> shapeIdToNodeMap[shape.id]
+      .filter (node)-> node?
+    console.log nodes
+    edges = shapes
+      .map (shape)-> shapeIdToEdgeMap[shape.id]
+      .filter (edge)-> edge?
+    console.log edges
 
-        stage.update()
-
-      console.log physicalPosition
-      console.log hitnodes
+    nodes.forEach (node)->
+      shape = nodeShapeMap[node.id]
+      shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
+      stage.update()
 
   windowSize = $(window).asEventStream("resize")
     .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}

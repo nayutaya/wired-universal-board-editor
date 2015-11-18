@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, selectedNode, stage, windowSize;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, objectsUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, stage, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -278,6 +278,7 @@
       return value / 1000 * 20;
     };
     nodeShapeMap = {};
+    shapeIdToNodeMap = {};
     nodes.forEach(function(node) {
       var r, shape, x, y;
       x = micrometerToPixel(node.x);
@@ -288,9 +289,11 @@
       shape.x = x;
       shape.y = y;
       stage.addChild(shape);
-      return nodeShapeMap[node.id] = shape;
+      nodeShapeMap[node.id] = shape;
+      return shapeIdToNodeMap[shape.id] = node;
     });
     edgeShapeMap = {};
+    shapeIdToEdgeMap = {};
     edges.forEach(function(edge) {
       var shape, x1, x2, y1, y2;
       x1 = micrometerToPixel(nodeMap[edge.a].x);
@@ -298,9 +301,10 @@
       x2 = micrometerToPixel(nodeMap[edge.b].x);
       y2 = micrometerToPixel(nodeMap[edge.b].y);
       shape = new createjs.Shape();
-      shape.graphics.beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
+      shape.graphics.setStrokeStyle(3).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
       stage.addChild(shape);
-      return edgeShapeMap[edge.id] = shape;
+      edgeShapeMap[edge.id] = shape;
+      return shapeIdToEdgeMap[shape.id] = edge;
     });
     cursor = new createjs.Shape();
     cursor.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0);
@@ -320,31 +324,28 @@
     logicalToPhysical = function(value) {
       return value / 20 * 1000;
     };
-    selectedNode = cursorPosition.map(function(logicalPosition) {
-      return {
-        x: logicalToPhysical(logicalPosition.x),
-        y: logicalToPhysical(logicalPosition.y)
-      };
-    }).onValue(function(physicalPosition) {
-      var hitnodes;
-      hitnodes = nodes.filter(function(node) {
-        var cx, cy, hit, nr, nx, ny;
-        nx = node.x;
-        ny = node.y;
-        nr = logicalToPhysical(10);
-        cx = physicalPosition.x;
-        cy = physicalPosition.y;
-        hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2);
-        return hit;
+    objectsUnderPoint = cursorPosition.map(function(value) {
+      return stage.getObjectsUnderPoint(value.x, value.y);
+    });
+    objectsUnderPoint.onValue(function(shapes) {
+      nodes = shapes.map(function(shape) {
+        return shapeIdToNodeMap[shape.id];
+      }).filter(function(node) {
+        return node != null;
       });
-      hitnodes.forEach(function(node) {
+      console.log(nodes);
+      edges = shapes.map(function(shape) {
+        return shapeIdToEdgeMap[shape.id];
+      }).filter(function(edge) {
+        return edge != null;
+      });
+      console.log(edges);
+      return nodes.forEach(function(node) {
         var shape;
         shape = nodeShapeMap[node.id];
         shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
         return stage.update();
       });
-      console.log(physicalPosition);
-      return console.log(hitnodes);
     });
     windowSize = $(window).asEventStream("resize").map(function(e) {
       return {
