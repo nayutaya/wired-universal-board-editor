@@ -259,13 +259,10 @@
     ]
   };
 
-  console.log(board_6x4);
-
   $(document).ready(function() {
-    var board, edgeMap, edges, nodeCircleMap, nodeMap, nodes, ref, ref1, stage;
+    var board, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
-    console.log(stage);
     board = board_6x4;
     nodeMap = {};
     nodes = (ref = board != null ? board.nodes : void 0) != null ? ref : [];
@@ -277,16 +274,32 @@
     edges.forEach(function(edge) {
       return edgeMap[edge.id] = edge;
     });
-    nodeCircleMap = {};
+    micrometerToPixel = function(value) {
+      return value / 1000 * 20 + 20;
+    };
+    nodeShapeMap = {};
     nodes.forEach(function(node) {
-      var circle, r, x, y;
-      x = node.x / 1000 * 20 + 20;
-      y = node.y / 1000 * 20 + 20;
+      var r, shape, x, y;
+      x = micrometerToPixel(node.x);
+      y = micrometerToPixel(node.y);
       r = 10;
-      circle = new createjs.Shape();
-      circle.graphics.beginFill("DeepSkyBlue").drawCircle(x, y, r);
-      stage.addChild(circle);
-      return nodeCircleMap[node.id] = circle;
+      shape = new createjs.Shape();
+      shape.graphics.beginFill("DeepSkyBlue").drawCircle(x, y, r);
+      stage.addChild(shape);
+      return nodeShapeMap[node.id] = shape;
+    });
+    edgeShapeMap = {};
+    edges.forEach(function(edge) {
+      var shape, x1, x2, y1, y2;
+      x1 = micrometerToPixel(nodeMap[edge.a].x);
+      y1 = micrometerToPixel(nodeMap[edge.a].y);
+      x2 = micrometerToPixel(nodeMap[edge.b].x);
+      y2 = micrometerToPixel(nodeMap[edge.b].y);
+      shape = new createjs.Shape();
+      shape.graphics.beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
+      stage.addChild(shape);
+      edgeShapeMap[edge.id] = shape;
+      return console.log([x1, y1]);
     });
     stage.update();
     $(window).resize(function(e) {
