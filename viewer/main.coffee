@@ -14,7 +14,7 @@ $(document).ready ->
   edges = (board?.edges ? [])
   edges.forEach (edge)-> edgeMap[edge.id] = edge
 
-  micrometerToPixel = (value)->  value / 1000 * 20 + 20
+  micrometerToPixel = (value)->  value / 1000 * 20
 
   nodeShapeMap = {}
   nodes.forEach (node)->
@@ -42,7 +42,19 @@ $(document).ready ->
 
     console.log [x1, y1]
 
+  cursor = new createjs.Shape()
+  cursor.graphics.beginFill("green").drawCircle(0, 0, 5)
+  stage.addChild(cursor)
+
   stage.update()
+
+  clicks = $("#canvas1").asEventStream("click")
+  clicks.onValue (e)->
+    console.log "click"
+    console.log e
+    cursor.x = e.offsetX
+    cursor.y = e.offsetY
+    stage.update()
 
   $(window).resize (e)->
     stage.canvas.width  = $(e.target).width()

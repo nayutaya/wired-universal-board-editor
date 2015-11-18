@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage;
+    var board, clicks, cursor, edgeMap, edgeShapeMap, edges, micrometerToPixel, nodeMap, nodeShapeMap, nodes, ref, ref1, stage;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -275,7 +275,7 @@
       return edgeMap[edge.id] = edge;
     });
     micrometerToPixel = function(value) {
-      return value / 1000 * 20 + 20;
+      return value / 1000 * 20;
     };
     nodeShapeMap = {};
     nodes.forEach(function(node) {
@@ -301,7 +301,18 @@
       edgeShapeMap[edge.id] = shape;
       return console.log([x1, y1]);
     });
+    cursor = new createjs.Shape();
+    cursor.graphics.beginFill("green").drawCircle(0, 0, 5);
+    stage.addChild(cursor);
     stage.update();
+    clicks = $("#canvas1").asEventStream("click");
+    clicks.onValue(function(e) {
+      console.log("click");
+      console.log(e);
+      cursor.x = e.offsetX;
+      cursor.y = e.offsetY;
+      return stage.update();
+    });
     $(window).resize(function(e) {
       stage.canvas.width = $(e.target).width();
       stage.canvas.height = $(e.target).height();
