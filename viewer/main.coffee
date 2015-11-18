@@ -14,6 +14,24 @@ windowSizeAtResize = $(window).asEventStream("resize")
 # ウィンドウサイズ
 windowSize = windowSizeAtReady.merge(windowSizeAtResize)
 
+
+class Board
+  constructor: (board)->
+    @nodes = (board?.nodes ? [])
+    @edges = (board?.edges ? [])
+
+    @idToNodeMap = {}
+    @nodes.forEach ((node)-> @idToNodeMap[node.id] = node), this
+    @idToEdgeMap = {}
+    @edges.forEach ((edge)-> @idToEdgeMap[edge.id] = edge), this
+
+  getNodeById: (id)->
+    return @idToNodeMap[id]
+
+  getEdgeById: (id)->
+    return @idToEdgeMap[id]
+
+
 $(document).ready ->
   console.log "ready"
 
@@ -26,19 +44,14 @@ $(document).ready ->
       return -> stageUpdateBus.push(null)
     )()
 
-  board = board_6x4
-  nodeMap = {}
-  nodes = (board?.nodes ? [])
-  nodes.forEach (node)-> nodeMap[node.id] = node
-  edgeMap = {}
-  edges = (board?.edges ? [])
-  edges.forEach (edge)-> edgeMap[edge.id] = edge
+  board = new Board(board_6x4)
+  console.log board
 
   micrometerToPixel = (value)-> value / 1000 * 20
 
   nodeShapeMap = {}
   shapeIdToNodeMap = {}
-  nodes.forEach (node)->
+  board.nodes.forEach (node)->
     x = micrometerToPixel(node.x)
     y = micrometerToPixel(node.y)
     r = 10
@@ -53,11 +66,11 @@ $(document).ready ->
 
   edgeShapeMap = {}
   shapeIdToEdgeMap = {}
-  edges.forEach (edge)->
-    x1 = micrometerToPixel(nodeMap[edge.a].x)
-    y1 = micrometerToPixel(nodeMap[edge.a].y)
-    x2 = micrometerToPixel(nodeMap[edge.b].x)
-    y2 = micrometerToPixel(nodeMap[edge.b].y)
+  board.edges.forEach (edge)->
+    x1 = micrometerToPixel(board.getNodeById(edge.a).x)
+    y1 = micrometerToPixel(board.getNodeById(edge.a).y)
+    x2 = micrometerToPixel(board.getNodeById(edge.b).x)
+    y2 = micrometerToPixel(board.getNodeById(edge.b).y)
 
     shape = new createjs.Shape()
     shape.graphics.setStrokeStyle(3).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2)
@@ -106,10 +119,10 @@ $(document).ready ->
     # console.log "edgesUnderPoint"
     # console.log edges
     edges.forEach (edge)->
-      x1 = micrometerToPixel(nodeMap[edge.a].x)
-      y1 = micrometerToPixel(nodeMap[edge.a].y)
-      x2 = micrometerToPixel(nodeMap[edge.b].x)
-      y2 = micrometerToPixel(nodeMap[edge.b].y)
+      x1 = micrometerToPixel(board.getNodeById(edge.a).x)
+      y1 = micrometerToPixel(board.getNodeById(edge.a).y)
+      x2 = micrometerToPixel(board.getNodeById(edge.b).x)
+      y2 = micrometerToPixel(board.getNodeById(edge.b).y)
 
       shape = edgeShapeMap[edge.id]
       shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2)
