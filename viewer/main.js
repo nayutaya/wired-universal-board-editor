@@ -287,17 +287,26 @@
 
   Board = (function() {
     function Board(board) {
-      var ref, ref1;
+      var ref, ref1, self;
       this.nodes = (ref = board != null ? board.nodes : void 0) != null ? ref : [];
       this.edges = (ref1 = board != null ? board.edges : void 0) != null ? ref1 : [];
+      self = this;
       this.idToNodeMap = {};
-      this.nodes.forEach((function(node) {
-        return this.idToNodeMap[node.id] = node;
-      }), this);
+      this.nodes.forEach(function(node) {
+        return self.idToNodeMap[node.id] = node;
+      });
       this.idToEdgeMap = {};
-      this.edges.forEach((function(edge) {
-        return this.idToEdgeMap[edge.id] = edge;
-      }), this);
+      this.edges.forEach(function(edge) {
+        return self.idToEdgeMap[edge.id] = edge;
+      });
+      this.edges.forEach(function(edge) {
+        edge.node1 = self.getNodeById(edge.a);
+        edge.node2 = self.getNodeById(edge.b);
+        edge.x1 = edge.node1.x;
+        edge.y1 = edge.node1.y;
+        edge.x2 = edge.node2.x;
+        return edge.y2 = edge.node2.y;
+      });
     }
 
     Board.prototype.getNodeById = function(id) {
@@ -350,10 +359,10 @@
     shapeIdToEdgeMap = {};
     board.edges.forEach(function(edge) {
       var shape, x1, x2, y1, y2;
-      x1 = micrometerToPixel(board.getNodeById(edge.a).x);
-      y1 = micrometerToPixel(board.getNodeById(edge.a).y);
-      x2 = micrometerToPixel(board.getNodeById(edge.b).x);
-      y2 = micrometerToPixel(board.getNodeById(edge.b).y);
+      x1 = micrometerToPixel(edge.x1);
+      y1 = micrometerToPixel(edge.y1);
+      x2 = micrometerToPixel(edge.x2);
+      y2 = micrometerToPixel(edge.y2);
       shape = new createjs.Shape();
       shape.graphics.setStrokeStyle(3).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
       stage.addChild(shape);
@@ -406,10 +415,10 @@
     edgesUnderPoint.onValue(function(edges) {
       edges.forEach(function(edge) {
         var shape, x1, x2, y1, y2;
-        x1 = micrometerToPixel(board.getNodeById(edge.a).x);
-        y1 = micrometerToPixel(board.getNodeById(edge.a).y);
-        x2 = micrometerToPixel(board.getNodeById(edge.b).x);
-        y2 = micrometerToPixel(board.getNodeById(edge.b).y);
+        x1 = micrometerToPixel(edge.x1);
+        y1 = micrometerToPixel(edge.y1);
+        x2 = micrometerToPixel(edge.x2);
+        y2 = micrometerToPixel(edge.y2);
         shape = edgeShapeMap[edge.id];
         return shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2);
       });

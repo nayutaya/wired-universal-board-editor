@@ -20,10 +20,20 @@ class Board
     @nodes = (board?.nodes ? [])
     @edges = (board?.edges ? [])
 
+    self = this
+
     @idToNodeMap = {}
-    @nodes.forEach ((node)-> @idToNodeMap[node.id] = node), this
+    @nodes.forEach (node)-> self.idToNodeMap[node.id] = node
     @idToEdgeMap = {}
-    @edges.forEach ((edge)-> @idToEdgeMap[edge.id] = edge), this
+    @edges.forEach (edge)-> self.idToEdgeMap[edge.id] = edge
+
+    @edges.forEach (edge)->
+      edge.node1 = self.getNodeById(edge.a)
+      edge.node2 = self.getNodeById(edge.b)
+      edge.x1 = edge.node1.x
+      edge.y1 = edge.node1.y
+      edge.x2 = edge.node2.x
+      edge.y2 = edge.node2.y
 
   getNodeById: (id)->
     return @idToNodeMap[id]
@@ -67,10 +77,10 @@ $(document).ready ->
   edgeShapeMap = {}
   shapeIdToEdgeMap = {}
   board.edges.forEach (edge)->
-    x1 = micrometerToPixel(board.getNodeById(edge.a).x)
-    y1 = micrometerToPixel(board.getNodeById(edge.a).y)
-    x2 = micrometerToPixel(board.getNodeById(edge.b).x)
-    y2 = micrometerToPixel(board.getNodeById(edge.b).y)
+    x1 = micrometerToPixel(edge.x1)
+    y1 = micrometerToPixel(edge.y1)
+    x2 = micrometerToPixel(edge.x2)
+    y2 = micrometerToPixel(edge.y2)
 
     shape = new createjs.Shape()
     shape.graphics.setStrokeStyle(3).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2)
@@ -119,10 +129,10 @@ $(document).ready ->
     # console.log "edgesUnderPoint"
     # console.log edges
     edges.forEach (edge)->
-      x1 = micrometerToPixel(board.getNodeById(edge.a).x)
-      y1 = micrometerToPixel(board.getNodeById(edge.a).y)
-      x2 = micrometerToPixel(board.getNodeById(edge.b).x)
-      y2 = micrometerToPixel(board.getNodeById(edge.b).y)
+      x1 = micrometerToPixel(edge.x1)
+      y1 = micrometerToPixel(edge.y1)
+      x2 = micrometerToPixel(edge.x2)
+      y2 = micrometerToPixel(edge.y2)
 
       shape = edgeShapeMap[edge.id]
       shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2)
