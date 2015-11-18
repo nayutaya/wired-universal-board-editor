@@ -353,12 +353,18 @@
 
   NodeShape = (function() {
     function NodeShape(node1, viewport, nodeRadius, stageUpdate) {
-      var color, self;
+      var self;
       this.node = node1;
       this.shape = new createjs.Shape();
+      this.color = new Bacon.Bus();
       self = this;
-      color = "DeepSkyBlue";
-      nodeRadius.onValue(function(nodeRadius) {
+      Bacon.combineTemplate({
+        color: this.color,
+        nodeRadius: nodeRadius
+      }).onValue(function(value) {
+        var color;
+        color = value.color;
+        nodeRadius = value.nodeRadius;
         self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius);
         return stageUpdate();
       });
@@ -367,7 +373,12 @@
         self.shape.y = viewport.physicalToLogical(self.node.y);
         return stageUpdate();
       });
+      this.setColor("DeepSkyBlue");
     }
+
+    NodeShape.prototype.setColor = function(color) {
+      return this.color.push(color);
+    };
 
     return NodeShape;
 
@@ -378,30 +389,37 @@
       var self;
       this.edge = edge1;
       this.shape = new createjs.Shape();
+      this.color = new Bacon.Bus();
       self = this;
       Bacon.combineTemplate({
         viewport: viewport,
-        edgeWidth: edgeWidth
+        edgeWidth: edgeWidth,
+        color: this.color
       }).onValue(function(value) {
-        var x1, x2, y1, y2;
+        var color, x1, x2, y1, y2;
         viewport = value.viewport;
         edgeWidth = value.edgeWidth;
-        console.log("viewport: " + viewport + ", " + edgeWidth + ": edgeWidth");
+        color = value.color;
         x1 = viewport.physicalToLogical(self.edge.x1);
         y1 = viewport.physicalToLogical(self.edge.y1);
         x2 = viewport.physicalToLogical(self.edge.x2);
         y2 = viewport.physicalToLogical(self.edge.y2);
-        self.shape.graphics.setStrokeStyle(edgeWidth).beginStroke("red").moveTo(x1, y1).lineTo(x2, y2);
+        self.shape.graphics.clear().setStrokeStyle(edgeWidth).beginStroke(color).moveTo(x1, y1).lineTo(x2, y2);
         return stageUpdate();
       });
+      this.setColor("red");
     }
+
+    EdgeShape.prototype.setColor = function(color) {
+      return this.color.push(color);
+    };
 
     return EdgeShape;
 
   })();
 
   $(document).ready(function() {
-    var board, cursorPosition, cursorShape, edgeShapesUnderPoint, logicalToPhysical, nodeShapesUnderPoint, shapeIdToEdgeShapeMap, shapeIdToNodeShapeMap, shapesUnderPoint, stage, stageUpdate;
+    var board, cursorPosition, cursorShape, edgeShapesUnderPoint, nodeShapesUnderPoint, shapeIdToEdgeShapeMap, shapeIdToNodeShapeMap, shapesUnderPoint, stage, stageUpdate;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     stageUpdate = (function() {
@@ -444,9 +462,6 @@
     cursorShape = new CursorShape(cursorPosition, stageUpdate);
     stage.addChild(cursorShape.shape);
     stageUpdate();
-    logicalToPhysical = function(value) {
-      return value / 20 * 1000;
-    };
     shapesUnderPoint = cursorPosition.map(function(value) {
       return stage.getObjectsUnderPoint(value.x, value.y);
     });
@@ -464,31 +479,16 @@
         return edgeShape != null;
       });
     });
-
-    /*
-    nodesUnderPoint.onValue (nodes)->
-       * console.log "nodesUnderPoint:"
-       * console.log nodes
-      nodes.forEach (node)->
-        shape = nodeShapeMap[node.id]
-        shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
-      stageUpdate()
-     */
-
-    /*
-    edgesUnderPoint.onValue (edges)->
-       * console.log "edgesUnderPoint"
-       * console.log edges
-      edges.forEach (edge)->
-        x1 = viewport.physicalToLogical(edge.x1)
-        y1 = viewport.physicalToLogical(edge.y1)
-        x2 = viewport.physicalToLogical(edge.x2)
-        y2 = viewport.physicalToLogical(edge.y2)
-    
-        shape = edgeShapeMap[edge.id]
-        shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2)
-      stageUpdate()
-     */
+    nodeShapesUnderPoint.onValue(function(nodeShapes) {
+      return nodeShapes.forEach(function(nodeShape) {
+        return nodeShape.setColor("blue");
+      });
+    });
+    edgeShapesUnderPoint.onValue(function(edgeShapes) {
+      return edgeShapes.forEach(function(edgeShape) {
+        return edgeShape.setColor("blue");
+      });
+    });
     windowSize.onValue(function(value) {
       stage.canvas.width = value.width;
       stage.canvas.height = value.height;

@@ -65,12 +65,18 @@ class CursorShape
 class NodeShape
   constructor: (@node, viewport, nodeRadius, stageUpdate)->
     @shape = new createjs.Shape()
+    @color = new Bacon.Bus()
 
     self = this
 
-    color = "DeepSkyBlue"
-    nodeRadius.onValue (nodeRadius)->
-      self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius)
+    Bacon.combineTemplate(color: @color, nodeRadius: nodeRadius).onValue (value)->
+      color      = value.color
+      nodeRadius = value.nodeRadius
+
+      self.shape.graphics
+        .clear()
+        .beginFill(color)
+        .drawCircle(0, 0, nodeRadius)
       stageUpdate()
 
     viewport.onValue (viewport)->
@@ -78,25 +84,37 @@ class NodeShape
       self.shape.y = viewport.physicalToLogical(self.node.y)
       stageUpdate()
 
+    @.setColor("DeepSkyBlue")
+
+  setColor: (color)->
+    @color.push(color)
+
 class EdgeShape
   constructor: (@edge, viewport, edgeWidth, stageUpdate)->
     @shape = new createjs.Shape()
+    @color = new Bacon.Bus()
 
     self = this
 
-    Bacon.combineTemplate(viewport: viewport, edgeWidth: edgeWidth).onValue (value)->
+    Bacon.combineTemplate(viewport: viewport, edgeWidth: edgeWidth, color: @color).onValue (value)->
       viewport  = value.viewport
       edgeWidth = value.edgeWidth
-      console.log "viewport: #{viewport}, #{edgeWidth}: edgeWidth"
+      color     = value.color
 
       x1 = viewport.physicalToLogical(self.edge.x1)
       y1 = viewport.physicalToLogical(self.edge.y1)
       x2 = viewport.physicalToLogical(self.edge.x2)
       y2 = viewport.physicalToLogical(self.edge.y2)
       self.shape.graphics
-        .setStrokeStyle(edgeWidth).beginStroke("red")
+        .clear()
+        .setStrokeStyle(edgeWidth).beginStroke(color)
         .moveTo(x1, y1).lineTo(x2, y2)
       stageUpdate()
+
+    @.setColor("red")
+
+  setColor: (color)->
+    @color.push(color)
 
 
 $(document).ready ->
@@ -139,7 +157,6 @@ $(document).ready ->
 
   stageUpdate()
 
-  logicalToPhysical = (value)-> value / 20 * 1000
 
   shapesUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
   nodeShapesUnderPoint = shapesUnderPoint.map (shapes)->
@@ -151,30 +168,13 @@ $(document).ready ->
       .map (shape)-> shapeIdToEdgeShapeMap[shape.id]
       .filter (edgeShape)-> edgeShape?
 
-  ###
-  nodesUnderPoint.onValue (nodes)->
-    # console.log "nodesUnderPoint:"
-    # console.log nodes
-    nodes.forEach (node)->
-      shape = nodeShapeMap[node.id]
-      shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
-    stageUpdate()
-  ###
+  nodeShapesUnderPoint.onValue (nodeShapes)->
+    nodeShapes.forEach (nodeShape)->
+      nodeShape.setColor("blue")
 
-  ###
-  edgesUnderPoint.onValue (edges)->
-    # console.log "edgesUnderPoint"
-    # console.log edges
-    edges.forEach (edge)->
-      x1 = viewport.physicalToLogical(edge.x1)
-      y1 = viewport.physicalToLogical(edge.y1)
-      x2 = viewport.physicalToLogical(edge.x2)
-      y2 = viewport.physicalToLogical(edge.y2)
-
-      shape = edgeShapeMap[edge.id]
-      shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2)
-    stageUpdate()
-  ###
+  edgeShapesUnderPoint.onValue (edgeShapes)->
+    edgeShapes.forEach (edgeShape)->
+      edgeShape.setColor("blue")
 
 
   windowSize.onValue (value)->
