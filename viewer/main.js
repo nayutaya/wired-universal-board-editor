@@ -320,14 +320,24 @@
   Viewport = (function() {
     function Viewport(options) {
       this.scale = options != null ? options.scale : void 0;
+      this.offsetX = options != null ? options.offsetX : void 0;
+      this.offsetY = options != null ? options.offsetY : void 0;
     }
 
-    Viewport.prototype.physicalToLogical = function(value) {
-      return value * this.scale;
+    Viewport.prototype.physicalXToLogicalX = function(value) {
+      return (value * this.scale) + this.offsetX;
     };
 
-    Viewport.prototype.logicalToPhysical = function(value) {
-      return value / this.scale;
+    Viewport.prototype.physicalYToLogicalY = function(value) {
+      return (value * this.scale) + this.offsetY;
+    };
+
+    Viewport.prototype.logicalXToPhysicalX = function(value) {
+      return (value - this.offsetX) / this.scale;
+    };
+
+    Viewport.prototype.logicalYToPhysicalY = function(value) {
+      return (value - this.offsetY) / this.scale;
     };
 
     return Viewport;
@@ -369,8 +379,8 @@
         return stageUpdate();
       });
       viewport.onValue(function(viewport) {
-        self.shape.x = viewport.physicalToLogical(self.node.x);
-        self.shape.y = viewport.physicalToLogical(self.node.y);
+        self.shape.x = viewport.physicalXToLogicalX(self.node.x);
+        self.shape.y = viewport.physicalYToLogicalY(self.node.y);
         return stageUpdate();
       });
       this.setColor("DeepSkyBlue");
@@ -400,10 +410,10 @@
         viewport = value.viewport;
         edgeWidth = value.edgeWidth;
         color = value.color;
-        x1 = viewport.physicalToLogical(self.edge.x1);
-        y1 = viewport.physicalToLogical(self.edge.y1);
-        x2 = viewport.physicalToLogical(self.edge.x2);
-        y2 = viewport.physicalToLogical(self.edge.y2);
+        x1 = viewport.physicalXToLogicalX(self.edge.x1);
+        y1 = viewport.physicalYToLogicalY(self.edge.y1);
+        x2 = viewport.physicalXToLogicalX(self.edge.x2);
+        y2 = viewport.physicalYToLogicalY(self.edge.y2);
         self.shape.graphics.clear().setStrokeStyle(edgeWidth).beginStroke(color).moveTo(x1, y1).lineTo(x2, y2);
         return stageUpdate();
       });
@@ -419,7 +429,7 @@
   })();
 
   $(document).ready(function() {
-    var board, cursorPosition, cursorShape, edgeShapesUnderPoint, nodeShapesUnderPoint, shapeIdToEdgeShapeMap, shapeIdToNodeShapeMap, shapesUnderPoint, stage, stageUpdate;
+    var board, cursorPosition, cursorShape, edgeShapesUnderPoint, moveTable, nodeShapesUnderPoint, offsetStream, shapeIdToEdgeShapeMap, shapeIdToNodeShapeMap, shapesUnderPoint, stage, stageUpdate;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     stageUpdate = (function() {
@@ -451,7 +461,9 @@
     nodeRadius.push(10);
     edgeWidth.push(3);
     viewport.push(new Viewport({
-      scale: 1.0 / 1000 * 20
+      scale: 1.0 / 1000 * 20,
+      offsetX: 0,
+      offsetY: 0
     }));
     cursorPosition = $("#canvas1").asEventStream("mousemove").map(function(e) {
       return {
@@ -494,16 +506,52 @@
       stage.canvas.height = value.height;
       return stageUpdate();
     });
+    moveTable = {
+      38: {
+        x: 0,
+        y: +10
+      },
+      40: {
+        x: 0,
+        y: -10
+      },
+      37: {
+        x: +10,
+        y: 0
+      },
+      39: {
+        x: -10,
+        y: 0
+      }
+    };
+    offsetStream = $(document).asEventStream("keydown").map(function(e) {
+      var ref;
+      return (ref = moveTable[e.keyCode]) != null ? ref : {
+        x: 0,
+        y: 0
+      };
+    }).scan({
+      x: 0,
+      y: 0
+    }, function(a, b) {
+      return {
+        x: a.x + b.x,
+        y: a.y + b.y
+      };
+    });
+    offsetStream.onValue(function(e) {
+      return viewport.push(new Viewport({
+        scale: 1.0 / 1000 * 20,
+        offsetX: e.x,
+        offsetY: e.y
+      }));
+    });
     return $(document).asEventStream("keydown").onValue(function(e) {
       switch (e.keyCode) {
         case 38:
-          console.log("up");
-          return viewport.push(new Viewport({
-            scale: 1.0 / 1000 * 30
-          }));
+          return console.log("up");
         case 40:
-          console.log("down");
-          return nodeRadius.push(20);
+          return console.log("down");
         case 37:
           return console.log("left");
         case 40:

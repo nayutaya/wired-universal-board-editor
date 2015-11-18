@@ -44,12 +44,13 @@ class Board
 class Viewport
   constructor: (options)->
     @scale   = options?.scale
-    # @offsetX = options?.offsetX
-    # @offsetY = options?.offsetY
+    @offsetX = options?.offsetX
+    @offsetY = options?.offsetY
 
-  physicalToLogical: (value)-> value * @scale
-
-  logicalToPhysical: (value)-> value / @scale
+  physicalXToLogicalX: (value)-> (value * @scale) + @offsetX
+  physicalYToLogicalY: (value)-> (value * @scale) + @offsetY
+  logicalXToPhysicalX: (value)-> (value - @offsetX) / @scale
+  logicalYToPhysicalY: (value)-> (value - @offsetY) / @scale
 
 class CursorShape
   constructor: (position, stageUpdate)->
@@ -80,8 +81,8 @@ class NodeShape
       stageUpdate()
 
     viewport.onValue (viewport)->
-      self.shape.x = viewport.physicalToLogical(self.node.x)
-      self.shape.y = viewport.physicalToLogical(self.node.y)
+      self.shape.x = viewport.physicalXToLogicalX(self.node.x)
+      self.shape.y = viewport.physicalYToLogicalY(self.node.y)
       stageUpdate()
 
     @.setColor("DeepSkyBlue")
@@ -101,10 +102,10 @@ class EdgeShape
       edgeWidth = value.edgeWidth
       color     = value.color
 
-      x1 = viewport.physicalToLogical(self.edge.x1)
-      y1 = viewport.physicalToLogical(self.edge.y1)
-      x2 = viewport.physicalToLogical(self.edge.x2)
-      y2 = viewport.physicalToLogical(self.edge.y2)
+      x1 = viewport.physicalXToLogicalX(self.edge.x1)
+      y1 = viewport.physicalYToLogicalY(self.edge.y1)
+      x2 = viewport.physicalXToLogicalX(self.edge.x2)
+      y2 = viewport.physicalYToLogicalY(self.edge.y2)
       self.shape.graphics
         .clear()
         .setStrokeStyle(edgeWidth).beginStroke(color)
@@ -147,7 +148,7 @@ $(document).ready ->
 
   nodeRadius.push(10)
   edgeWidth.push(3)
-  viewport.push(new Viewport(scale: 1.0 / 1000 * 20))
+  viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
 
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
@@ -182,14 +183,29 @@ $(document).ready ->
     stage.canvas.height = value.height
     stageUpdate()
 
+  moveTable = {
+    38: {x: 0, y: +10}, # Up
+    40: {x: 0, y: -10}, # Down
+    37: {x: +10, y: 0}, # Left
+    39: {x: -10, y: 0}, # Right
+  }
+
+  offsetStream = $(document).asEventStream("keydown")
+    .map (e)-> moveTable[e.keyCode] ? {x: 0, y: 0}
+    .scan {x: 0, y: 0}, (a, b)-> {x: a.x + b.x, y: a.y + b.y}
+
+  offsetStream.onValue (e)->
+    viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: e.x, offsetY: e.y))
+
   $(document).asEventStream("keydown").onValue (e)->
     # console.log e
     switch e.keyCode
       when 38
         console.log("up")
-        viewport.push(new Viewport(scale: 1.0 / 1000 * 30))
+        # viewport.push(new Viewport(scale: 1.0 / 1000 * 30))
+        # viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 50, offsetY: 0))
       when 40
         console.log("down")
-        nodeRadius.push(20)
+        # nodeRadius.push(20)
       when 37 then console.log("left")
       when 40 then console.log("right")
