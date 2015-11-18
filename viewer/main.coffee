@@ -23,7 +23,9 @@ $(document).ready ->
     r = 10
 
     shape = new createjs.Shape()
-    shape.graphics.beginFill("DeepSkyBlue").drawCircle(x, y, r)
+    shape.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, r)
+    shape.x = x
+    shape.y = y
     stage.addChild(shape)
     nodeShapeMap[node.id] = shape
 
@@ -68,6 +70,13 @@ $(document).ready ->
         cy = physicalPosition.y
         hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2)
         return hit
+      hitnodes.forEach (node)->
+        shape = nodeShapeMap[node.id]
+        # nodeShapeMap[node.id].style = "blue"
+        shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
+
+        stage.update()
+
       console.log physicalPosition
       console.log hitnodes
 

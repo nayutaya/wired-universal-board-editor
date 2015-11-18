@@ -284,7 +284,9 @@
       y = micrometerToPixel(node.y);
       r = 10;
       shape = new createjs.Shape();
-      shape.graphics.beginFill("DeepSkyBlue").drawCircle(x, y, r);
+      shape.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, r);
+      shape.x = x;
+      shape.y = y;
       stage.addChild(shape);
       return nodeShapeMap[node.id] = shape;
     });
@@ -334,6 +336,12 @@
         cy = physicalPosition.y;
         hit = Math.pow(nx - cx, 2) + Math.pow(ny - cy, 2) <= Math.pow(nr, 2);
         return hit;
+      });
+      hitnodes.forEach(function(node) {
+        var shape;
+        shape = nodeShapeMap[node.id];
+        shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
+        return stage.update();
       });
       console.log(physicalPosition);
       return console.log(hitnodes);
