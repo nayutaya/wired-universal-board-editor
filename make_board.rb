@@ -1,9 +1,9 @@
 
 require "json"
 
-node_x = 5
-node_y = 10
-unit   = 2540
+node_x = (ARGV.shift || "5").to_i
+node_y = (ARGV.shift || "5").to_i
+unit   = (ARGV.shift || "2540").to_i
 
 nodes = []
 node_y.times { |yi|
