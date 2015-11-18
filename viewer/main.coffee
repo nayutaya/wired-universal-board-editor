@@ -55,7 +55,6 @@ $(document).ready ->
 
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
-    .toProperty()
 
   cursorPosition.onValue (value)->
     cursor.x = value.x
@@ -64,22 +63,27 @@ $(document).ready ->
 
   logicalToPhysical = (value)-> value / 20 * 1000
 
-  objectsUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
-  objectsUnderPoint.onValue (shapes)->
-    nodes = shapes
+  shapesUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
+  nodesUnderPoint = shapesUnderPoint.map (shapes)->
+    shapes
       .map (shape)-> shapeIdToNodeMap[shape.id]
       .filter (node)-> node?
-    console.log nodes
-    edges = shapes
+  edgesUnderPoint = shapesUnderPoint.map (shapes)->
+    shapes
       .map (shape)-> shapeIdToEdgeMap[shape.id]
       .filter (edge)-> edge?
-    console.log edges
 
+  nodesUnderPoint.onValue (nodes)->
+    # console.log "nodesUnderPoint:"
+    # console.log nodes
     nodes.forEach (node)->
       shape = nodeShapeMap[node.id]
       shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10)
       stage.update()
 
+  edgesUnderPoint.onValue (edges)->
+    # console.log "edgesUnderPoint"
+    # console.log edges
     edges.forEach (edge)->
       x1 = micrometerToPixel(nodeMap[edge.a].x)
       y1 = micrometerToPixel(nodeMap[edge.a].y)
@@ -92,7 +96,6 @@ $(document).ready ->
 
   windowSize = $(window).asEventStream("resize")
     .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
-    .toProperty()
 
   windowSize.onValue (value)->
     stage.canvas.width  = value.width

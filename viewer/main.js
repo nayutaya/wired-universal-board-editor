@@ -260,7 +260,7 @@
   };
 
   $(document).ready(function() {
-    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, objectsUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, stage, windowSize;
+    var board, cursor, cursorPosition, edgeMap, edgeShapeMap, edges, edgesUnderPoint, logicalToPhysical, micrometerToPixel, nodeMap, nodeShapeMap, nodes, nodesUnderPoint, ref, ref1, shapeIdToEdgeMap, shapeIdToNodeMap, shapesUnderPoint, stage, windowSize;
     console.log("ready");
     stage = new createjs.Stage("canvas1");
     board = board_6x4;
@@ -315,7 +315,7 @@
         x: e.offsetX,
         y: e.offsetY
       };
-    }).toProperty();
+    });
     cursorPosition.onValue(function(value) {
       cursor.x = value.x;
       cursor.y = value.y;
@@ -324,28 +324,32 @@
     logicalToPhysical = function(value) {
       return value / 20 * 1000;
     };
-    objectsUnderPoint = cursorPosition.map(function(value) {
+    shapesUnderPoint = cursorPosition.map(function(value) {
       return stage.getObjectsUnderPoint(value.x, value.y);
     });
-    objectsUnderPoint.onValue(function(shapes) {
-      nodes = shapes.map(function(shape) {
+    nodesUnderPoint = shapesUnderPoint.map(function(shapes) {
+      return shapes.map(function(shape) {
         return shapeIdToNodeMap[shape.id];
       }).filter(function(node) {
         return node != null;
       });
-      console.log(nodes);
-      edges = shapes.map(function(shape) {
+    });
+    edgesUnderPoint = shapesUnderPoint.map(function(shapes) {
+      return shapes.map(function(shape) {
         return shapeIdToEdgeMap[shape.id];
       }).filter(function(edge) {
         return edge != null;
       });
-      console.log(edges);
-      nodes.forEach(function(node) {
+    });
+    nodesUnderPoint.onValue(function(nodes) {
+      return nodes.forEach(function(node) {
         var shape;
         shape = nodeShapeMap[node.id];
         shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
         return stage.update();
       });
+    });
+    edgesUnderPoint.onValue(function(edges) {
       return edges.forEach(function(edge) {
         var shape, x1, x2, y1, y2;
         x1 = micrometerToPixel(nodeMap[edge.a].x);
@@ -362,7 +366,7 @@
         width: $(e.target).width(),
         height: $(e.target).height()
       };
-    }).toProperty();
+    });
     windowSize.onValue(function(value) {
       stage.canvas.width = value.width;
       stage.canvas.height = value.height;
