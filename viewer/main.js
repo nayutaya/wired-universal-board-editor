@@ -340,10 +340,20 @@
         return edge != null;
       });
       console.log(edges);
-      return nodes.forEach(function(node) {
+      nodes.forEach(function(node) {
         var shape;
         shape = nodeShapeMap[node.id];
         shape.graphics.clear().beginFill("blue").drawCircle(0, 0, 10);
+        return stage.update();
+      });
+      return edges.forEach(function(edge) {
+        var shape, x1, x2, y1, y2;
+        x1 = micrometerToPixel(nodeMap[edge.a].x);
+        y1 = micrometerToPixel(nodeMap[edge.a].y);
+        x2 = micrometerToPixel(nodeMap[edge.b].x);
+        y2 = micrometerToPixel(nodeMap[edge.b].y);
+        shape = edgeShapeMap[edge.id];
+        shape.graphics.clear().setStrokeStyle(3).beginStroke("blue").moveTo(x1, y1).lineTo(x2, y2);
         return stage.update();
       });
     });
