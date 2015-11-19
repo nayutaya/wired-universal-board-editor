@@ -22,6 +22,14 @@ class Board
       edge.y2 = edge.node2.y
     ).bind(this)
 
+    @nodeBounds = {}
+    @nodeBounds.xMin = @nodes.map((node)-> node.x).sort((a, b)-> a - b)[0]
+    @nodeBounds.xMax = @nodes.map((node)-> node.x).sort((a, b)-> b - a)[0]
+    @nodeBounds.yMin = @nodes.map((node)-> node.y).sort((a, b)-> a - b)[0]
+    @nodeBounds.yMax = @nodes.map((node)-> node.y).sort((a, b)-> b - a)[0]
+    @nodeBounds.xDelta = @nodeBounds.xMax - @nodeBounds.xMin
+    @nodeBounds.yDelta = @nodeBounds.yMax - @nodeBounds.yMin
+
   getNodeById: (id)->
     return @idToNodeMap[id]
 
@@ -87,6 +95,7 @@ class CursorShape
       @shape.y = position.y
       @context.updateStage()
     ).bind(this)
+
 
 class NodeShape
   constructor: (@context, @node)->
@@ -174,21 +183,34 @@ class EnvironmentShape
     @cursorShape     = new CursorShape(@context)
 
 
+class Zoomer
+  constructor: (@context, @board)->
+    @defaultViewport = null
+    @windowSize = @context.windowSize.onValue ((windowSize)->
+      xScale = windowSize.width  / @board.nodeBounds.xDelta
+      yScale = windowSize.height / @board.nodeBounds.yDelta
+      scale  = Math.min(xScale, yScale) * 0.8
+      @defaultViewport = new Viewport(
+        scale:  scale,
+        offsetX: (windowSize.width - (@board.nodeBounds.xDelta * scale))  / 2,
+        offsetY: (windowSize.height - (@board.nodeBounds.yDelta * scale)) / 2)
+    ).bind(this)
+
+
 $(document).ready ->
   console.log "ready"
 
   stage   = new createjs.Stage("canvas1")
   context = new Context(stage)
   board   = new Board(board_6x4)
+  zoomer  = new Zoomer(context, board)
 
   environmentShape = new EnvironmentShape(context)
   boardShape       = new BoardShape(context, board)
 
   context.nodeRadius.push(10)
   context.edgeWidth.push(3)
-  context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
-
-  # context.updateStage()
+  setTimeout (-> console.log context.viewport.push(zoomer.defaultViewport)), 0
 
 
   shapesUnderPoint = context.cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
@@ -210,29 +232,32 @@ $(document).ready ->
       edgeShape.setColor("blue")
 
 
-  moveTable = {
-    38: {x: 0, y: +10}, # Up
-    40: {x: 0, y: -10}, # Down
-    37: {x: +10, y: 0}, # Left
-    39: {x: -10, y: 0}, # Right
-  }
-
   offsetStream = $(document).asEventStream("keydown")
-    .map (e)-> moveTable[e.keyCode] ? {x: 0, y: 0}
+    .map (e)->
+      {
+        38: {x:   0, y: +10}, # Up
+        40: {x:   0, y: -10}, # Down
+        37: {x: +10, y:   0}, # Left
+        39: {x: -10, y:   0}, # Right
+      }[e.keyCode]
+    .filter (move)-> move?
     .scan {x: 0, y: 0}, (a, b)-> {x: a.x + b.x, y: a.y + b.y}
 
-  offsetStream.onValue (e)->
-    context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: e.x, offsetY: e.y))
+  setTimeout (->
+    defaultViewport = zoomer.defaultViewport
+    offsetStream.onValue (e)->
+      context.viewport.push(new Viewport(
+        scale:   defaultViewport.scale,
+        offsetX: defaultViewport.offsetX + e.x,
+        offsetY: defaultViewport.offsetY + e.y))
+  ), 0
 
+  ###
   $(document).asEventStream("keydown").onValue (e)->
-    # console.log e
+    console.log e
     switch e.keyCode
-      when 38
-        console.log("up")
-        # viewport.push(new Viewport(scale: 1.0 / 1000 * 30))
-        # viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 50, offsetY: 0))
-      when 40
-        console.log("down")
-        # nodeRadius.push(20)
+      when 38 then console.log("up")
+      when 40 then console.log("down")
       when 37 then console.log("left")
       when 40 then console.log("right")
+  ###
