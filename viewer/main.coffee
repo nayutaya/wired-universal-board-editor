@@ -5,17 +5,16 @@ board_6x4 = {"nodes":[{"id":"(0,0)","x":0,"y":0},{"id":"(1,0)","x":2540,"y":0},{
 
 class Board
   constructor: (board)->
-    @nodes = (board?.nodes ? [])
-    @edges = (board?.edges ? [])
-
     self = this
+    self.nodes = (board?.nodes ? [])
+    self.edges = (board?.edges ? [])
 
-    @idToNodeMap = {}
-    @nodes.forEach (node)-> self.idToNodeMap[node.id] = node
-    @idToEdgeMap = {}
-    @edges.forEach (edge)-> self.idToEdgeMap[edge.id] = edge
+    self.idToNodeMap = {}
+    self.nodes.forEach (node)-> self.idToNodeMap[node.id] = node
+    self.idToEdgeMap = {}
+    self.edges.forEach (edge)-> self.idToEdgeMap[edge.id] = edge
 
-    @edges.forEach (edge)->
+    self.edges.forEach (edge)->
       edge.node1 = self.getNodeById(edge.a)
       edge.node2 = self.getNodeById(edge.b)
       edge.x1 = edge.node1.x
