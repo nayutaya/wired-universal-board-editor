@@ -1,10 +1,6 @@
 
 board_6x4 = {"nodes":[{"id":"(0,0)","x":0,"y":0},{"id":"(1,0)","x":2540,"y":0},{"id":"(2,0)","x":5080,"y":0},{"id":"(3,0)","x":7620,"y":0},{"id":"(4,0)","x":10160,"y":0},{"id":"(5,0)","x":12700,"y":0},{"id":"(0,1)","x":0,"y":2540},{"id":"(1,1)","x":2540,"y":2540},{"id":"(2,1)","x":5080,"y":2540},{"id":"(3,1)","x":7620,"y":2540},{"id":"(4,1)","x":10160,"y":2540},{"id":"(5,1)","x":12700,"y":2540},{"id":"(0,2)","x":0,"y":5080},{"id":"(1,2)","x":2540,"y":5080},{"id":"(2,2)","x":5080,"y":5080},{"id":"(3,2)","x":7620,"y":5080},{"id":"(4,2)","x":10160,"y":5080},{"id":"(5,2)","x":12700,"y":5080},{"id":"(0,3)","x":0,"y":7620},{"id":"(1,3)","x":2540,"y":7620},{"id":"(2,3)","x":5080,"y":7620},{"id":"(3,3)","x":7620,"y":7620},{"id":"(4,3)","x":10160,"y":7620},{"id":"(5,3)","x":12700,"y":7620}],"edges":[{"id":"(0,0)-(1,0)","a":"(0,0)","b":"(1,0)"},{"id":"(1,0)-(2,0)","a":"(1,0)","b":"(2,0)"},{"id":"(2,0)-(3,0)","a":"(2,0)","b":"(3,0)"},{"id":"(3,0)-(4,0)","a":"(3,0)","b":"(4,0)"},{"id":"(4,0)-(5,0)","a":"(4,0)","b":"(5,0)"},{"id":"(0,1)-(1,1)","a":"(0,1)","b":"(1,1)"},{"id":"(1,1)-(2,1)","a":"(1,1)","b":"(2,1)"},{"id":"(2,1)-(3,1)","a":"(2,1)","b":"(3,1)"},{"id":"(3,1)-(4,1)","a":"(3,1)","b":"(4,1)"},{"id":"(4,1)-(5,1)","a":"(4,1)","b":"(5,1)"},{"id":"(0,2)-(1,2)","a":"(0,2)","b":"(1,2)"},{"id":"(1,2)-(2,2)","a":"(1,2)","b":"(2,2)"},{"id":"(2,2)-(3,2)","a":"(2,2)","b":"(3,2)"},{"id":"(3,2)-(4,2)","a":"(3,2)","b":"(4,2)"},{"id":"(4,2)-(5,2)","a":"(4,2)","b":"(5,2)"},{"id":"(0,3)-(1,3)","a":"(0,3)","b":"(1,3)"},{"id":"(1,3)-(2,3)","a":"(1,3)","b":"(2,3)"},{"id":"(2,3)-(3,3)","a":"(2,3)","b":"(3,3)"},{"id":"(3,3)-(4,3)","a":"(3,3)","b":"(4,3)"},{"id":"(4,3)-(5,3)","a":"(4,3)","b":"(5,3)"},{"id":"(0,0)-(0,1)","a":"(0,0)","b":"(0,1)"},{"id":"(1,0)-(1,1)","a":"(1,0)","b":"(1,1)"},{"id":"(2,0)-(2,1)","a":"(2,0)","b":"(2,1)"},{"id":"(3,0)-(3,1)","a":"(3,0)","b":"(3,1)"},{"id":"(4,0)-(4,1)","a":"(4,0)","b":"(4,1)"},{"id":"(5,0)-(5,1)","a":"(5,0)","b":"(5,1)"},{"id":"(0,1)-(0,2)","a":"(0,1)","b":"(0,2)"},{"id":"(1,1)-(1,2)","a":"(1,1)","b":"(1,2)"},{"id":"(2,1)-(2,2)","a":"(2,1)","b":"(2,2)"},{"id":"(3,1)-(3,2)","a":"(3,1)","b":"(3,2)"},{"id":"(4,1)-(4,2)","a":"(4,1)","b":"(4,2)"},{"id":"(5,1)-(5,2)","a":"(5,1)","b":"(5,2)"},{"id":"(0,2)-(0,3)","a":"(0,2)","b":"(0,3)"},{"id":"(1,2)-(1,3)","a":"(1,2)","b":"(1,3)"},{"id":"(2,2)-(2,3)","a":"(2,2)","b":"(2,3)"},{"id":"(3,2)-(3,3)","a":"(3,2)","b":"(3,3)"},{"id":"(4,2)-(4,3)","a":"(4,2)","b":"(4,3)"},{"id":"(5,2)-(5,3)","a":"(5,2)","b":"(5,3)"}]}
 
-nodeRadius = new Bacon.Bus()
-edgeWidth  = new Bacon.Bus()
-viewport   = new Bacon.Bus()
-
 # 準備完了時におけるウィンドウサイズ
 windowSizeAtReady  = $(document).asEventStream("ready")
   .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
@@ -41,6 +37,7 @@ class Board
   getEdgeById: (id)->
     return @idToEdgeMap[id]
 
+
 class Viewport
   constructor: (options)->
     @scale   = options?.scale
@@ -51,6 +48,13 @@ class Viewport
   physicalYToLogicalY: (value)-> (value * @scale) + @offsetY
   logicalXToPhysicalX: (value)-> (value - @offsetX) / @scale
   logicalYToPhysicalY: (value)-> (value - @offsetY) / @scale
+
+
+class Context
+  constructor: ->
+    @nodeRadius = new Bacon.Bus()
+    @edgeWidth  = new Bacon.Bus()
+    @viewport   = new Bacon.Bus()
 
 class CursorShape
   constructor: (position, stageUpdate)->
@@ -117,6 +121,7 @@ class EdgeShape
   setColor: (color)->
     @color.push(color)
 
+context = new Context()
 
 $(document).ready ->
   console.log "ready"
@@ -135,20 +140,20 @@ $(document).ready ->
 
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
-    nodeShape = new NodeShape(node, viewport, nodeRadius, stageUpdate)
+    nodeShape = new NodeShape(node, context.viewport, context.nodeRadius, stageUpdate)
     stage.addChild(nodeShape.shape)
     shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
   shapeIdToEdgeShapeMap = {}
   board.edges.forEach (edge)->
-    edgeShape = new EdgeShape(edge, viewport, edgeWidth, stageUpdate)
+    edgeShape = new EdgeShape(edge, context.viewport, context.edgeWidth, stageUpdate)
     stage.addChild(edgeShape.shape)
     shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
 
 
-  nodeRadius.push(10)
-  edgeWidth.push(3)
-  viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
+  context.nodeRadius.push(10)
+  context.edgeWidth.push(3)
+  context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
 
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
@@ -195,7 +200,7 @@ $(document).ready ->
     .scan {x: 0, y: 0}, (a, b)-> {x: a.x + b.x, y: a.y + b.y}
 
   offsetStream.onValue (e)->
-    viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: e.x, offsetY: e.y))
+    context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: e.x, offsetY: e.y))
 
   $(document).asEventStream("keydown").onValue (e)->
     # console.log e
