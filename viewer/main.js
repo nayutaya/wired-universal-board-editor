@@ -367,28 +367,26 @@
   })();
 
   NodeShape = (function() {
-    function NodeShape(node1, viewport, nodeRadius, stageUpdate) {
+    function NodeShape(context1, node1, stageUpdate) {
       var self;
+      this.context = context1;
       this.node = node1;
-      this.shape = new createjs.Shape();
-      this.color = new Bacon.Bus();
       self = this;
+      self.shape = new createjs.Shape();
+      self.color = new Bacon.Bus();
       Bacon.combineTemplate({
-        color: this.color,
-        nodeRadius: nodeRadius
+        color: self.color,
+        nodeRadius: self.context.nodeRadius
       }).onValue(function(value) {
-        var color;
-        color = value.color;
-        nodeRadius = value.nodeRadius;
-        self.shape.graphics.clear().beginFill(color).drawCircle(0, 0, nodeRadius);
+        self.shape.graphics.clear().beginFill(value.color).drawCircle(0, 0, value.nodeRadius);
         return stageUpdate();
       });
-      viewport.onValue(function(viewport) {
+      self.context.viewport.onValue(function(viewport) {
         self.shape.x = viewport.physicalXToLogicalX(self.node.x);
         self.shape.y = viewport.physicalYToLogicalY(self.node.y);
         return stageUpdate();
       });
-      this.setColor("DeepSkyBlue");
+      self.setColor("DeepSkyBlue");
     }
 
     NodeShape.prototype.setColor = function(color) {
@@ -400,29 +398,27 @@
   })();
 
   EdgeShape = (function() {
-    function EdgeShape(edge1, viewport, edgeWidth, stageUpdate) {
+    function EdgeShape(context1, edge1, stageUpdate) {
       var self;
+      this.context = context1;
       this.edge = edge1;
-      this.shape = new createjs.Shape();
-      this.color = new Bacon.Bus();
       self = this;
+      self.shape = new createjs.Shape();
+      self.color = new Bacon.Bus();
       Bacon.combineTemplate({
-        viewport: viewport,
-        edgeWidth: edgeWidth,
+        viewport: self.context.viewport,
+        edgeWidth: self.context.edgeWidth,
         color: this.color
       }).onValue(function(value) {
-        var color, x1, x2, y1, y2;
-        viewport = value.viewport;
-        edgeWidth = value.edgeWidth;
-        color = value.color;
-        x1 = viewport.physicalXToLogicalX(self.edge.x1);
-        y1 = viewport.physicalYToLogicalY(self.edge.y1);
-        x2 = viewport.physicalXToLogicalX(self.edge.x2);
-        y2 = viewport.physicalYToLogicalY(self.edge.y2);
-        self.shape.graphics.clear().setStrokeStyle(edgeWidth).beginStroke(color).moveTo(x1, y1).lineTo(x2, y2);
+        var x1, x2, y1, y2;
+        x1 = value.viewport.physicalXToLogicalX(self.edge.x1);
+        y1 = value.viewport.physicalYToLogicalY(self.edge.y1);
+        x2 = value.viewport.physicalXToLogicalX(self.edge.x2);
+        y2 = value.viewport.physicalYToLogicalY(self.edge.y2);
+        self.shape.graphics.clear().setStrokeStyle(value.edgeWidth).beginStroke(value.color).moveTo(x1, y1).lineTo(x2, y2);
         return stageUpdate();
       });
-      this.setColor("red");
+      self.setColor("red");
     }
 
     EdgeShape.prototype.setColor = function(color) {
@@ -454,14 +450,14 @@
     shapeIdToNodeShapeMap = {};
     board.nodes.forEach(function(node) {
       var nodeShape;
-      nodeShape = new NodeShape(node, context.viewport, context.nodeRadius, stageUpdate);
+      nodeShape = new NodeShape(context, node, stageUpdate);
       stage.addChild(nodeShape.shape);
       return shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape;
     });
     shapeIdToEdgeShapeMap = {};
     board.edges.forEach(function(edge) {
       var edgeShape;
-      edgeShape = new EdgeShape(edge, context.viewport, context.edgeWidth, stageUpdate);
+      edgeShape = new EdgeShape(context, edge, stageUpdate);
       stage.addChild(edgeShape.shape);
       return shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape;
     });

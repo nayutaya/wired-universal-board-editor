@@ -68,58 +68,49 @@ class CursorShape
       stageUpdate()
 
 class NodeShape
-  constructor: (@node, viewport, nodeRadius, stageUpdate)->
-    @shape = new createjs.Shape()
-    @color = new Bacon.Bus()
-
+  constructor: (@context, @node, stageUpdate)->
     self = this
+    self.shape = new createjs.Shape()
+    self.color = new Bacon.Bus()
 
-    Bacon.combineTemplate(color: @color, nodeRadius: nodeRadius).onValue (value)->
-      color      = value.color
-      nodeRadius = value.nodeRadius
-
+    Bacon.combineTemplate(color: self.color, nodeRadius: self.context.nodeRadius).onValue (value)->
       self.shape.graphics
         .clear()
-        .beginFill(color)
-        .drawCircle(0, 0, nodeRadius)
+        .beginFill(value.color)
+        .drawCircle(0, 0, value.nodeRadius)
       stageUpdate()
 
-    viewport.onValue (viewport)->
+    self.context.viewport.onValue (viewport)->
       self.shape.x = viewport.physicalXToLogicalX(self.node.x)
       self.shape.y = viewport.physicalYToLogicalY(self.node.y)
       stageUpdate()
 
-    @.setColor("DeepSkyBlue")
+    self.setColor("DeepSkyBlue")
 
   setColor: (color)->
-    @color.push(color)
+    this.color.push(color)
 
 class EdgeShape
-  constructor: (@edge, viewport, edgeWidth, stageUpdate)->
-    @shape = new createjs.Shape()
-    @color = new Bacon.Bus()
-
+  constructor: (@context, @edge, stageUpdate)->
     self = this
+    self.shape = new createjs.Shape()
+    self.color = new Bacon.Bus()
 
-    Bacon.combineTemplate(viewport: viewport, edgeWidth: edgeWidth, color: @color).onValue (value)->
-      viewport  = value.viewport
-      edgeWidth = value.edgeWidth
-      color     = value.color
-
-      x1 = viewport.physicalXToLogicalX(self.edge.x1)
-      y1 = viewport.physicalYToLogicalY(self.edge.y1)
-      x2 = viewport.physicalXToLogicalX(self.edge.x2)
-      y2 = viewport.physicalYToLogicalY(self.edge.y2)
+    Bacon.combineTemplate(viewport: self.context.viewport, edgeWidth: self.context.edgeWidth, color: @color).onValue (value)->
+      x1 = value.viewport.physicalXToLogicalX(self.edge.x1)
+      y1 = value.viewport.physicalYToLogicalY(self.edge.y1)
+      x2 = value.viewport.physicalXToLogicalX(self.edge.x2)
+      y2 = value.viewport.physicalYToLogicalY(self.edge.y2)
       self.shape.graphics
         .clear()
-        .setStrokeStyle(edgeWidth).beginStroke(color)
+        .setStrokeStyle(value.edgeWidth).beginStroke(value.color)
         .moveTo(x1, y1).lineTo(x2, y2)
       stageUpdate()
 
-    @.setColor("red")
+    self.setColor("red")
 
   setColor: (color)->
-    @color.push(color)
+    this.color.push(color)
 
 context = new Context()
 
@@ -140,13 +131,13 @@ $(document).ready ->
 
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
-    nodeShape = new NodeShape(node, context.viewport, context.nodeRadius, stageUpdate)
+    nodeShape = new NodeShape(context, node, stageUpdate)
     stage.addChild(nodeShape.shape)
     shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
   shapeIdToEdgeShapeMap = {}
   board.edges.forEach (edge)->
-    edgeShape = new EdgeShape(edge, context.viewport, context.edgeWidth, stageUpdate)
+    edgeShape = new EdgeShape(context, edge, stageUpdate)
     stage.addChild(edgeShape.shape)
     shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
 
