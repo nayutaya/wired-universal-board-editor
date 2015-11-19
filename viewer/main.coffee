@@ -7,13 +7,15 @@ class Board
   constructor: (board)->
     @nodes = (board?.nodes ? [])
     @edges = (board?.edges ? [])
-
     @idToNodeMap = {}
-    @nodes.forEach ((node)-> @idToNodeMap[node.id] = node).bind(this)
     @idToEdgeMap = {}
-    @edges.forEach ((edge)-> @idToEdgeMap[edge.id] = edge).bind(this)
+
+    @nodes.forEach ((node)->
+      @idToNodeMap[node.id] = node
+    ).bind(this)
 
     @edges.forEach ((edge)->
+      @idToEdgeMap[edge.id] = edge
       edge.node1 = @getNodeById(edge.a)
       edge.node2 = @getNodeById(edge.b)
       edge.x1 = edge.node1.x
