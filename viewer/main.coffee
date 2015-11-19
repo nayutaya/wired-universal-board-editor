@@ -67,20 +67,25 @@ class Context
 
 class CursorShape
   constructor: (@context, position)->
-    @shape = new createjs.Shape()
-    @shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
-
     self = this
+    self.shape = new createjs.Shape()
+    self.shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
+
+    self.context.stage.addChild(self.shape)
+
     position.onValue (position)->
       self.shape.x = position.x
       self.shape.y = position.y
       self.context.updateStage()
+
 
 class NodeShape
   constructor: (@context, @node)->
     self = this
     self.shape = new createjs.Shape()
     self.color = new Bacon.Bus()
+
+    self.context.stage.addChild(self.shape)
 
     Bacon.combineTemplate(color: self.color, nodeRadius: self.context.nodeRadius).onValue (value)->
       self.shape.graphics
@@ -105,6 +110,8 @@ class EdgeShape
     self.shape = new createjs.Shape()
     self.color = new Bacon.Bus()
 
+    self.context.stage.addChild(self.shape)
+
     Bacon.combineTemplate(viewport: self.context.viewport, edgeWidth: self.context.edgeWidth, color: @color).onValue (value)->
       x1 = value.viewport.physicalXToLogicalX(self.edge.x1)
       y1 = value.viewport.physicalYToLogicalY(self.edge.y1)
@@ -128,18 +135,15 @@ $(document).ready ->
   context = new Context(stage)
 
   board = new Board(board_6x4)
-  console.log board
 
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
     nodeShape = new NodeShape(context, node)
-    stage.addChild(nodeShape.shape)
     shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
   shapeIdToEdgeShapeMap = {}
   board.edges.forEach (edge)->
     edgeShape = new EdgeShape(context, edge)
-    stage.addChild(edgeShape.shape)
     shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
 
 
@@ -151,7 +155,6 @@ $(document).ready ->
     .map (e)-> {x: e.offsetX, y: e.offsetY}
 
   cursorShape = new CursorShape(context, cursorPosition)
-  stage.addChild(cursorShape.shape)
 
   context.updateStage()
 
