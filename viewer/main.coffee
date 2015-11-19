@@ -137,15 +137,14 @@ $(document).ready ->
   board = new Board(board_6x4)
 
   shapeIdToNodeShapeMap = {}
-  board.nodes.forEach (node)->
-    nodeShape = new NodeShape(context, node)
-    shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
+  board.nodes
+    .map (node)-> new NodeShape(context, node)
+    .forEach (nodeShape)-> shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
   shapeIdToEdgeShapeMap = {}
-  board.edges.forEach (edge)->
-    edgeShape = new EdgeShape(context, edge)
-    shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
-
+  board.edges
+    .map (edge)-> new EdgeShape(context, edge)
+    .forEach (edgeShape)-> shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
 
   context.nodeRadius.push(10)
   context.edgeWidth.push(3)
