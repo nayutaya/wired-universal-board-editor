@@ -155,6 +155,19 @@ class BackgroundShape
     ).bind(this)
 
 
+class BoardShape
+  constructor: (@context, @board)->
+    @shapeIdToNodeShapeMap = {}
+    @shapeIdToEdgeShapeMap = {}
+
+    @board.nodes
+      .map ((node)-> new NodeShape(@context, node)).bind(this)
+      .forEach ((nodeShape)-> @shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape).bind(this)
+    @board.edges
+      .map ((edge)-> new EdgeShape(@context, edge)).bind(this)
+      .forEach ((edgeShape)-> @shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape).bind(this)
+
+
 class EnvironmentShape
   constructor: (@context)->
     @backgroundShape = new BackgroundShape(@context)
@@ -166,36 +179,26 @@ $(document).ready ->
 
   stage   = new createjs.Stage("canvas1")
   context = new Context(stage)
-
-  board = new Board(board_6x4)
+  board   = new Board(board_6x4)
 
   environmentShape = new EnvironmentShape(context)
-
-  shapeIdToNodeShapeMap = {}
-  board.nodes
-    .map (node)-> new NodeShape(context, node)
-    .forEach (nodeShape)-> shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
-
-  shapeIdToEdgeShapeMap = {}
-  board.edges
-    .map (edge)-> new EdgeShape(context, edge)
-    .forEach (edgeShape)-> shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
+  boardShape       = new BoardShape(context, board)
 
   context.nodeRadius.push(10)
   context.edgeWidth.push(3)
   context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
 
-  context.updateStage()
+  # context.updateStage()
 
 
   shapesUnderPoint = context.cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
   nodeShapesUnderPoint = shapesUnderPoint.map (shapes)->
     shapes
-      .map (shape)-> shapeIdToNodeShapeMap[shape.id]
+      .map (shape)-> boardShape.shapeIdToNodeShapeMap[shape.id]
       .filter (nodeShape)-> nodeShape?
   edgeShapesUnderPoint = shapesUnderPoint.map (shapes)->
     shapes
-      .map (shape)-> shapeIdToEdgeShapeMap[shape.id]
+      .map (shape)-> boardShape.shapeIdToEdgeShapeMap[shape.id]
       .filter (edgeShape)-> edgeShape?
 
   nodeShapesUnderPoint.onValue (nodeShapes)->
