@@ -240,16 +240,28 @@ $(document).ready ->
         37: {x: +10, y:   0}, # Left
         39: {x: -10, y:   0}, # Right
       }[e.keyCode]
-    .filter (move)-> move?
-    .scan {x: 0, y: 0}, (a, b)-> {x: a.x + b.x, y: a.y + b.y}
+    .filter (offset)-> offset?
+  offsetBus = new Bacon.Bus()
+  offsetBus.plug(offsetStream)
+
+  fitKeyStream = $(document).asEventStream("keydown")
+    .filter (e)-> (e.keyCode == 70)
 
   setTimeout (->
     defaultViewport = zoomer.defaultViewport
-    offsetStream.onValue (e)->
-      context.viewport.push(new Viewport(
-        scale:   defaultViewport.scale,
-        offsetX: defaultViewport.offsetX + e.x,
-        offsetY: defaultViewport.offsetY + e.y))
+    offsetBus
+      .scan {x: 0, y: 0}, (a, b)->
+        if a? && b?
+          {x: a.x + b.x, y: a.y + b.y}
+        else
+          {x: 0, y: 0}
+      .onValue (offset)->
+        context.viewport.push(new Viewport(
+          scale:   defaultViewport.scale,
+          offsetX: defaultViewport.offsetX + offset.x,
+          offsetY: defaultViewport.offsetY + offset.y))
+    fitKeyStream.onValue (e)->
+      offsetBus.push(null)
   ), 0
 
   ###
