@@ -5,22 +5,22 @@ board_6x4 = {"nodes":[{"id":"(0,0)","x":0,"y":0},{"id":"(1,0)","x":2540,"y":0},{
 
 class Board
   constructor: (board)->
-    self = this
-    self.nodes = (board?.nodes ? [])
-    self.edges = (board?.edges ? [])
+    @nodes = (board?.nodes ? [])
+    @edges = (board?.edges ? [])
 
-    self.idToNodeMap = {}
-    self.nodes.forEach (node)-> self.idToNodeMap[node.id] = node
-    self.idToEdgeMap = {}
-    self.edges.forEach (edge)-> self.idToEdgeMap[edge.id] = edge
+    @idToNodeMap = {}
+    @nodes.forEach ((node)-> @idToNodeMap[node.id] = node).bind(this)
+    @idToEdgeMap = {}
+    @edges.forEach ((edge)-> @idToEdgeMap[edge.id] = edge).bind(this)
 
-    self.edges.forEach (edge)->
-      edge.node1 = self.getNodeById(edge.a)
-      edge.node2 = self.getNodeById(edge.b)
+    @edges.forEach ((edge)->
+      edge.node1 = @getNodeById(edge.a)
+      edge.node2 = @getNodeById(edge.b)
       edge.x1 = edge.node1.x
       edge.y1 = edge.node1.y
       edge.x2 = edge.node2.x
       edge.y2 = edge.node2.y
+    ).bind(this)
 
   getNodeById: (id)->
     return @idToNodeMap[id]
@@ -43,11 +43,10 @@ class Viewport
 
 class Context
   constructor: (@stage)->
-    self = this
-    self.nodeRadius = new Bacon.Bus()
-    self.edgeWidth  = new Bacon.Bus()
-    self.viewport   = new Bacon.Bus()
-    self.updateStageBus = new Bacon.Bus()
+    @nodeRadius = new Bacon.Bus()
+    @edgeWidth  = new Bacon.Bus()
+    @viewport   = new Bacon.Bus()
+    @updateStageBus = new Bacon.Bus()
 
     # 準備完了時におけるウィンドウサイズ
     windowSizeAtReady  = $(document).asEventStream("ready")
@@ -56,19 +55,21 @@ class Context
     windowSizeAtResize = $(window).asEventStream("resize")
       .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
     # ウィンドウサイズ
-    self.windowSize = windowSizeAtReady.merge(windowSizeAtResize)
+    @windowSize = windowSizeAtReady.merge(windowSizeAtResize)
 
     # カーソル位置
-    self.cursorPosition = $(self.stage.canvas).asEventStream("mousemove")
+    @cursorPosition = $(@stage.canvas).asEventStream("mousemove")
       .map (e)-> {x: e.offsetX, y: e.offsetY}
 
-    self.updateStageBus.throttle(50).onValue (v)->
-      self.stage.update()
+    @updateStageBus.throttle(50).onValue ((v)->
+      @stage.update()
+    ).bind(this)
 
-    self.windowSize.onValue (value)->
-      self.stage.canvas.width  = value.width
-      self.stage.canvas.height = value.height
-      self.updateStage()
+    @windowSize.onValue ((value)->
+      @stage.canvas.width  = value.width
+      @stage.canvas.height = value.height
+      @updateStage()
+    ).bind(this)
 
   updateStage: ->
     @updateStageBus.push(null)
@@ -76,82 +77,82 @@ class Context
 
 class CursorShape
   constructor: (@context)->
-    self = this
-    self.shape = new createjs.Shape()
-    self.shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
+    @shape = new createjs.Shape()
+    @shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
 
-    self.context.stage.addChild(self.shape)
+    @context.stage.addChild(@shape)
 
-    self.context.cursorPosition.onValue (position)->
-      self.shape.x = position.x
-      self.shape.y = position.y
-      self.context.updateStage()
-
+    @context.cursorPosition.onValue ((position)->
+      @shape.x = position.x
+      @shape.y = position.y
+      @context.updateStage()
+    ).bind(this)
 
 class NodeShape
   constructor: (@context, @node)->
-    self = this
-    self.shape = new createjs.Shape()
-    self.color = new Bacon.Bus()
+    @shape = new createjs.Shape()
+    @color = new Bacon.Bus()
 
-    self.context.stage.addChild(self.shape)
+    @context.stage.addChild(@shape)
 
-    Bacon.combineTemplate(color: self.color, nodeRadius: self.context.nodeRadius).onValue (value)->
-      self.shape.graphics
+    Bacon.combineTemplate(color: @color, nodeRadius: @context.nodeRadius).onValue ((value)->
+      @shape.graphics
         .clear()
         .beginFill(value.color)
         .drawCircle(0, 0, value.nodeRadius)
-      self.context.updateStage()
+      @context.updateStage()
+    ).bind(this)
 
-    self.context.viewport.onValue (viewport)->
-      self.shape.x = viewport.physicalXToLogicalX(self.node.x)
-      self.shape.y = viewport.physicalYToLogicalY(self.node.y)
-      self.context.updateStage()
+    @context.viewport.onValue ((viewport)->
+      @shape.x = viewport.physicalXToLogicalX(@node.x)
+      @shape.y = viewport.physicalYToLogicalY(@node.y)
+      @context.updateStage()
+    ).bind(this)
 
-    self.setColor("DeepSkyBlue")
+    @setColor("DeepSkyBlue")
 
   setColor: (color)->
-    this.color.push(color)
+    @color.push(color)
 
 
 class EdgeShape
   constructor: (@context, @edge)->
-    self = this
-    self.shape = new createjs.Shape()
-    self.color = new Bacon.Bus()
+    @shape = new createjs.Shape()
+    @color = new Bacon.Bus()
 
-    self.context.stage.addChild(self.shape)
+    @context.stage.addChild(@shape)
 
-    Bacon.combineTemplate(viewport: self.context.viewport, edgeWidth: self.context.edgeWidth, color: @color).onValue (value)->
-      x1 = value.viewport.physicalXToLogicalX(self.edge.x1)
-      y1 = value.viewport.physicalYToLogicalY(self.edge.y1)
-      x2 = value.viewport.physicalXToLogicalX(self.edge.x2)
-      y2 = value.viewport.physicalYToLogicalY(self.edge.y2)
-      self.shape.graphics
+    Bacon.combineTemplate(viewport: @context.viewport, edgeWidth: @context.edgeWidth, color: @color).onValue ((value)->
+      x1 = value.viewport.physicalXToLogicalX(@edge.x1)
+      y1 = value.viewport.physicalYToLogicalY(@edge.y1)
+      x2 = value.viewport.physicalXToLogicalX(@edge.x2)
+      y2 = value.viewport.physicalYToLogicalY(@edge.y2)
+      @shape.graphics
         .clear()
         .setStrokeStyle(value.edgeWidth).beginStroke(value.color)
         .moveTo(x1, y1).lineTo(x2, y2)
-      self.context.updateStage()
+      @context.updateStage()
+    ).bind(this)
 
-    self.setColor("red")
+    @setColor("red")
 
   setColor: (color)->
-    this.color.push(color)
+    @color.push(color)
 
 
 class BackgroundShape
   constructor: (@context)->
-    self = this
-    self.shape = new createjs.Shape()
+    @shape = new createjs.Shape()
 
-    self.context.stage.addChild(self.shape)
+    @context.stage.addChild(@shape)
 
-    self.context.windowSize.onValue (windowSize)->
-      self.shape.graphics
+    @context.windowSize.onValue ((windowSize)->
+      @shape.graphics
         .clear()
         .beginFill("#F0F0F0")
         .drawRect(0, 0, windowSize.width, windowSize.height)
-      self.context.updateStage()
+      @context.updateStage()
+    ).bind(this)
 
 
 class EnvironmentShape
