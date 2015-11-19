@@ -42,10 +42,12 @@ class Viewport
 
 
 class Context
-  constructor: ->
-    @nodeRadius = new Bacon.Bus()
-    @edgeWidth  = new Bacon.Bus()
-    @viewport   = new Bacon.Bus()
+  constructor: (@stage)->
+    self = this
+    self.nodeRadius = new Bacon.Bus()
+    self.edgeWidth  = new Bacon.Bus()
+    self.viewport   = new Bacon.Bus()
+    self.updateStageBus = new Bacon.Bus()
 
     # 準備完了時におけるウィンドウサイズ
     windowSizeAtReady  = $(document).asEventStream("ready")
@@ -54,11 +56,17 @@ class Context
     windowSizeAtResize = $(window).asEventStream("resize")
       .map (e)-> {width: $(e.target).width(), height: $(e.target).height()}
     # ウィンドウサイズ
-    @windowSize = windowSizeAtReady.merge(windowSizeAtResize)
+    self.windowSize = windowSizeAtReady.merge(windowSizeAtResize)
+
+    self.updateStageBus.throttle(50).onValue (v)->
+      self.stage.update()
+
+  updateStage: ->
+    @updateStageBus.push(null)
 
 
 class CursorShape
-  constructor: (position, stageUpdate)->
+  constructor: (@context, position)->
     @shape = new createjs.Shape()
     @shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
 
@@ -66,10 +74,10 @@ class CursorShape
     position.onValue (position)->
       self.shape.x = position.x
       self.shape.y = position.y
-      stageUpdate()
+      self.context.updateStage()
 
 class NodeShape
-  constructor: (@context, @node, stageUpdate)->
+  constructor: (@context, @node)->
     self = this
     self.shape = new createjs.Shape()
     self.color = new Bacon.Bus()
@@ -79,12 +87,12 @@ class NodeShape
         .clear()
         .beginFill(value.color)
         .drawCircle(0, 0, value.nodeRadius)
-      stageUpdate()
+      self.context.updateStage()
 
     self.context.viewport.onValue (viewport)->
       self.shape.x = viewport.physicalXToLogicalX(self.node.x)
       self.shape.y = viewport.physicalYToLogicalY(self.node.y)
-      stageUpdate()
+      self.context.updateStage()
 
     self.setColor("DeepSkyBlue")
 
@@ -92,7 +100,7 @@ class NodeShape
     this.color.push(color)
 
 class EdgeShape
-  constructor: (@context, @edge, stageUpdate)->
+  constructor: (@context, @edge)->
     self = this
     self.shape = new createjs.Shape()
     self.color = new Bacon.Bus()
@@ -106,39 +114,31 @@ class EdgeShape
         .clear()
         .setStrokeStyle(value.edgeWidth).beginStroke(value.color)
         .moveTo(x1, y1).lineTo(x2, y2)
-      stageUpdate()
+      self.context.updateStage()
 
     self.setColor("red")
 
   setColor: (color)->
     this.color.push(color)
 
-context = new Context()
-
 $(document).ready ->
   console.log "ready"
 
-  stage = new createjs.Stage("canvas1")
-
-  stageUpdate = (->
-      stageUpdateBus = new Bacon.Bus()
-      stageUpdateBus.throttle(50).onValue (v)->
-        stage.update()
-      return -> stageUpdateBus.push(null)
-    )()
+  stage   = new createjs.Stage("canvas1")
+  context = new Context(stage)
 
   board = new Board(board_6x4)
   console.log board
 
   shapeIdToNodeShapeMap = {}
   board.nodes.forEach (node)->
-    nodeShape = new NodeShape(context, node, stageUpdate)
+    nodeShape = new NodeShape(context, node)
     stage.addChild(nodeShape.shape)
     shapeIdToNodeShapeMap[nodeShape.shape.id] = nodeShape
 
   shapeIdToEdgeShapeMap = {}
   board.edges.forEach (edge)->
-    edgeShape = new EdgeShape(context, edge, stageUpdate)
+    edgeShape = new EdgeShape(context, edge)
     stage.addChild(edgeShape.shape)
     shapeIdToEdgeShapeMap[edgeShape.shape.id] = edgeShape
 
@@ -150,10 +150,10 @@ $(document).ready ->
   cursorPosition = $("#canvas1").asEventStream("mousemove")
     .map (e)-> {x: e.offsetX, y: e.offsetY}
 
-  cursorShape = new CursorShape(cursorPosition, stageUpdate)
+  cursorShape = new CursorShape(context, cursorPosition)
   stage.addChild(cursorShape.shape)
 
-  stageUpdate()
+  context.updateStage()
 
 
   shapesUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
@@ -178,7 +178,7 @@ $(document).ready ->
   context.windowSize.onValue (value)->
     stage.canvas.width  = value.width
     stage.canvas.height = value.height
-    stageUpdate()
+    context.updateStage()
 
   moveTable = {
     38: {x: 0, y: +10}, # Up
