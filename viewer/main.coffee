@@ -132,6 +132,28 @@ class EdgeShape
   setColor: (color)->
     this.color.push(color)
 
+
+class BackgroundShape
+  constructor: (@context)->
+    self = this
+    self.shape = new createjs.Shape()
+
+    self.context.stage.addChild(self.shape)
+
+    self.context.windowSize.onValue (windowSize)->
+      self.shape.graphics
+        .clear()
+        .beginFill("#F0F0F0")
+        .drawRect(0, 0, windowSize.width, windowSize.height)
+      self.context.updateStage()
+
+
+class EnvironmentShape
+  constructor: (@context)->
+    @backgroundShape = new BackgroundShape(@context)
+    @cursorShape     = new CursorShape(@context)
+
+
 $(document).ready ->
   console.log "ready"
 
@@ -139,6 +161,8 @@ $(document).ready ->
   context = new Context(stage)
 
   board = new Board(board_6x4)
+
+  environmentShape = new EnvironmentShape(context)
 
   shapeIdToNodeShapeMap = {}
   board.nodes
@@ -153,9 +177,6 @@ $(document).ready ->
   context.nodeRadius.push(10)
   context.edgeWidth.push(3)
   context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
-
-
-  cursorShape = new CursorShape(context)
 
   context.updateStage()
 
