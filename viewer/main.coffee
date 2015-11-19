@@ -65,6 +65,11 @@ class Context
     self.updateStageBus.throttle(50).onValue (v)->
       self.stage.update()
 
+    self.windowSize.onValue (value)->
+      self.stage.canvas.width  = value.width
+      self.stage.canvas.height = value.height
+      self.updateStage()
+
   updateStage: ->
     @updateStageBus.push(null)
 
@@ -107,6 +112,7 @@ class NodeShape
 
   setColor: (color)->
     this.color.push(color)
+
 
 class EdgeShape
   constructor: (@context, @edge)->
@@ -199,11 +205,6 @@ $(document).ready ->
     edgeShapes.forEach (edgeShape)->
       edgeShape.setColor("blue")
 
-
-  context.windowSize.onValue (value)->
-    stage.canvas.width  = value.width
-    stage.canvas.height = value.height
-    context.updateStage()
 
   moveTable = {
     38: {x: 0, y: +10}, # Up
