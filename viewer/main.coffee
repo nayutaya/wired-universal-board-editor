@@ -58,6 +58,10 @@ class Context
     # ウィンドウサイズ
     self.windowSize = windowSizeAtReady.merge(windowSizeAtResize)
 
+    # カーソル位置
+    self.cursorPosition = $(self.stage.canvas).asEventStream("mousemove")
+      .map (e)-> {x: e.offsetX, y: e.offsetY}
+
     self.updateStageBus.throttle(50).onValue (v)->
       self.stage.update()
 
@@ -66,14 +70,14 @@ class Context
 
 
 class CursorShape
-  constructor: (@context, position)->
+  constructor: (@context)->
     self = this
     self.shape = new createjs.Shape()
     self.shape.graphics.beginStroke("green").moveTo(0, -5).lineTo(0, +5).moveTo(-5, 0).lineTo(+5, 0)
 
     self.context.stage.addChild(self.shape)
 
-    position.onValue (position)->
+    self.context.cursorPosition.onValue (position)->
       self.shape.x = position.x
       self.shape.y = position.y
       self.context.updateStage()
@@ -150,15 +154,13 @@ $(document).ready ->
   context.edgeWidth.push(3)
   context.viewport.push(new Viewport(scale: 1.0 / 1000 * 20, offsetX: 0, offsetY: 0))
 
-  cursorPosition = $("#canvas1").asEventStream("mousemove")
-    .map (e)-> {x: e.offsetX, y: e.offsetY}
 
-  cursorShape = new CursorShape(context, cursorPosition)
+  cursorShape = new CursorShape(context)
 
   context.updateStage()
 
 
-  shapesUnderPoint = cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
+  shapesUnderPoint = context.cursorPosition.map (value)-> stage.getObjectsUnderPoint(value.x, value.y)
   nodeShapesUnderPoint = shapesUnderPoint.map (shapes)->
     shapes
       .map (shape)-> shapeIdToNodeShapeMap[shape.id]
